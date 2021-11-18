@@ -104,7 +104,7 @@ module ID(
     assign offset = inst[15:0];
     assign sel = inst[2:0];
 
-    wire inst_ori, inst_lui, inst_addiu, inst_beq;
+    wire inst_ori, inst_lui, inst_addiu, inst_beq, inst_bne;
 
     wire op_add, op_sub, op_slt, op_sltu;
     wire op_and, op_nor, op_or, op_xor;
@@ -135,6 +135,7 @@ module ID(
     assign inst_lui     = op_d[6'b00_1111];
     assign inst_addiu   = op_d[6'b00_1001];
     assign inst_beq     = op_d[6'b00_0100];
+    assign inst_bne     = op_d[6'b00_0101];
 
 
 
@@ -225,9 +226,9 @@ module ID(
     };
 
 
-    wire br_e;
-    wire [31:0] br_addr;
-    wire rs_eq_rt;
+    wire br_e;                                  // 是否满足跳转
+    wire [31:0] br_addr;                        // 
+    wire rs_eq_rt;                              //
     wire rs_ge_z;
     wire rs_gt_z;
     wire rs_le_z;
@@ -237,8 +238,8 @@ module ID(
 
     assign rs_eq_rt = (rdata1 == rdata2);
 
-    assign br_e = inst_beq & rs_eq_rt;
-    assign br_addr = inst_beq ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 32'b0;
+    assign br_e = (inst_beq & rs_eq_rt) | (inst_bne & ~rs_eq_rt);
+    assign br_addr = (inst_beq ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 32'b0)|(inst_bne ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 32'b0);
 
     assign br_bus = {
         br_e,
