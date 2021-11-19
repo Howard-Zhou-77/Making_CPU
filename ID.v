@@ -15,7 +15,17 @@ module ID(
 
     output wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,
 
-    output wire [`BR_WD-1:0] br_bus 
+    output wire [`BR_WD-1:0] br_bus,
+    
+    input wire ex_wreg,
+    input wire [4:0] ex_waddr,
+    input wire [31:0] ex_wdata,
+
+    
+    input wire mem_wreg,
+    input wire [4:0] mem_waddr,
+    input wire [31:0] mem_wdata 
+
 );
 
     reg [`IF_TO_ID_WD-1:0] if_to_id_bus_r;
@@ -88,7 +98,14 @@ module ID(
         .rdata2 (rdata2 ),
         .we     (wb_rf_we     ),
         .waddr  (wb_rf_waddr  ),
-        .wdata  (wb_rf_wdata  )
+        .wdata  (wb_rf_wdata  ),
+        .ex_wreg    (ex_wreg  ),
+        .ex_waddr   (ex_waddr ),
+        .ex_wdata   (ex_wdata ),
+        
+        .mem_wreg    (mem_wreg  ),
+        .mem_waddr   (mem_waddr ),
+        .mem_wdata   (mem_wdata )
     );
 
     assign opcode = inst[31:26];

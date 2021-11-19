@@ -29,6 +29,12 @@ module mycpu_core(
     wire [`DATA_SRAM_WD-1:0] ex_dt_sram_bus;
     wire [`WB_TO_RF_WD-1:0] wb_to_rf_bus;
     wire [`StallBus-1:0] stall;
+    wire ex_to_id_reg;
+    wire [4:0] ex_to_id_add;
+    wire [31:0] ex_to_id_data;
+    wire mem_to_id_reg;
+    wire [4:0] mem_to_id_add;
+    wire [31:0] mem_to_id_data;
 
     IF u_IF(
     	.clk             (clk             ),
@@ -52,7 +58,13 @@ module mycpu_core(
         .inst_sram_rdata (inst_sram_rdata ),
         .wb_to_rf_bus    (wb_to_rf_bus    ),
         .id_to_ex_bus    (id_to_ex_bus    ),
-        .br_bus          (br_bus          )
+        .br_bus          (br_bus          ),
+        .ex_wreg         (ex_to_id_reg    ),
+        .ex_waddr        (ex_to_id_add    ),
+        .ex_wdata        (ex_to_id_data   ),
+        .mem_wreg        (mem_to_id_reg   ),
+        .mem_waddr       (mem_to_id_add   ),
+        .mem_wdata       (mem_to_id_data  ),
     );
 
     EX u_EX(
@@ -64,7 +76,10 @@ module mycpu_core(
         .data_sram_en    (data_sram_en    ),
         .data_sram_wen   (data_sram_wen   ),
         .data_sram_addr  (data_sram_addr  ),
-        .data_sram_wdata (data_sram_wdata )
+        .data_sram_wdata (data_sram_wdata ),
+        .ex_wreg         (ex_to_id_reg    ),
+        .ex_waddr        (ex_to_id_add    ),
+        .ex_wdata        (ex_to_id_data   )
     );
 
     MEM u_MEM(
@@ -73,7 +88,10 @@ module mycpu_core(
         .stall           (stall           ),
         .ex_to_mem_bus   (ex_to_mem_bus   ),
         .data_sram_rdata (data_sram_rdata ),
-        .mem_to_wb_bus   (mem_to_wb_bus   )
+        .mem_to_wb_bus   (mem_to_wb_bus   ),
+        .mem_wreg        (mem_to_id_reg   ),
+        .mem_waddr       (mem_to_id_add   ),
+        .mem_wdata       (mem_to_id_data  )
     );
     
     WB u_WB(

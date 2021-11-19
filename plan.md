@@ -37,5 +37,114 @@
 
 这里使用了好几个三目运算符(`A?B:C`)的嵌套。可以看到运算符最主要的加工一是通过`sel_alu_srcX`判定是否是寄存器，二是如果是16位立即数则对其进行符号位拓展。
 
-那么我们所做的就是增加和删减`input`和`output`。当然这是个大工作，涉及所有`.v`文件的调整。
+那么我们所做的就是增加和删减`input`和`output`。当然这是个大工作，涉及几个`.v`文件的调整。
+
+首先我们发现，这里调取寄存器时用到的两个变量`rf_rdataX`的定义要追溯到`ID.v`：
+```verilog
+    wire [31:0] rdata1, rdata2;
+
+    regfile u_regfile(
+    	.clk    (clk    ),
+        .raddr1 (rs ),
+        .rdata1 (rdata1 ),
+        .raddr2 (rt ),
+        .rdata2 (rdata2 ),
+        .we     (wb_rf_we     ),
+        .waddr  (wb_rf_waddr  ),
+        .wdata  (wb_rf_wdata  )
+    );
+```
+
+那么查找`lib/regfile.v`可以找到这个函数的原型：
+```verilog
+`include "defines.vh"
+module regfile(
+    input wire clk,
+    input wire [4:0] raddr1,
+    output wire [31:0] rdata1,
+    input wire [4:0] raddr2,
+    output wire [31:0] rdata2,
+    
+    input wire we,
+    input wire [4:0] waddr,
+    input wire [31:0] wdata
+);
+    reg [31:0] reg_array [31:0];
+    // write
+    always @ (posedge clk) begin
+        if (we && waddr!=5'b0) begin
+            reg_array[waddr] <= wdata;
+        end
+    end
+
+    // read out 1
+    assign rdata1 = (raddr1 == 5'b0) ? 32'b0 : reg_array[raddr1];
+
+    // read out2
+    assign rdata2 = (raddr2 == 5'b0) ? 32'b0 : reg_array[raddr2];
+endmodule
+```
+
+那么我们要做的第一步就是在`ID.v`上加入几根(\**我这里没有用错量词，因为类型是wire 导线，导线可不就是一根根的吗*)检查从EX和MEM段传来的参数，然后修改`lib/regfile.v`使`rdataX`在调取内容前遭到截流：
+
+```verilog
+    // read out 1
+    assign rdata1 = (raddr1 == 5'b0) ? 32'b0 : 
+                    (ex_wreg == 1'b1 && ex_waddr==raddr1) ? ex_wdata :
+                    (mem_wreg == 1'b1 && mem_waddr==raddr1) ? mem_wdata : reg_array[raddr1];
+
+    // read out2
+    assign rdata2 = (raddr2 == 5'b0) ? 32'b0 :
+                    (ex_wreg == 1'b1 && ex_waddr==raddr2) ? ex_wdata :
+                    (mem_wreg == 1'b1 && mem_waddr==raddr2) ? mem_wdata : reg_array[raddr2];
+```
+
+然后就是修改`EX.v`和`MEM.v`，在其中写入向下一段ID段传递的参数，再重写`mycpu_core.v`的相关模块：
+
+```verilog
+    ID u_ID(
+    	.clk             (clk             ),
+        .rst             (rst             ),
+        .stall           (stall           ),
+        .stallreq        (stallreq        ),
+        .if_to_id_bus    (if_to_id_bus    ),
+        .inst_sram_rdata (inst_sram_rdata ),
+        .wb_to_rf_bus    (wb_to_rf_bus    ),
+        .id_to_ex_bus    (id_to_ex_bus    ),
+        .br_bus          (br_bus          ),
+        .ex_wreg         (ex_to_id_reg    ),
+        .ex_waddr        (ex_to_id_add    ),
+        .ex_wdata        (ex_to_id_data   ),
+        .mem_wreg        (mem_to_id_reg   ),
+        .mem_waddr       (mem_to_id_add   ),
+        .mem_wdata       (mem_to_id_data  ),
+    );
+
+    EX u_EX(
+    	.clk             (clk             ),
+        .rst             (rst             ),
+        .stall           (stall           ),
+        .id_to_ex_bus    (id_to_ex_bus    ),
+        .ex_to_mem_bus   (ex_to_mem_bus   ),
+        .data_sram_en    (data_sram_en    ),
+        .data_sram_wen   (data_sram_wen   ),
+        .data_sram_addr  (data_sram_addr  ),
+        .data_sram_wdata (data_sram_wdata ),
+        .ex_wreg         (ex_to_id_reg    ),
+        .ex_waddr        (ex_to_id_add    ),
+        .ex_wdata        (ex_to_id_data   )
+    );
+
+    MEM u_MEM(
+    	.clk             (clk             ),
+        .rst             (rst             ),
+        .stall           (stall           ),
+        .ex_to_mem_bus   (ex_to_mem_bus   ),
+        .data_sram_rdata (data_sram_rdata ),
+        .mem_to_wb_bus   (mem_to_wb_bus   ),
+        .mem_wreg        (mem_to_id_reg   ),
+        .mem_waddr       (mem_to_id_add   ),
+        .mem_wdata       (mem_to_id_data  )
+    );
+```
 
