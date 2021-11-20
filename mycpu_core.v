@@ -64,7 +64,7 @@ module mycpu_core(
         .ex_wdata        (ex_to_id_data   ),
         .mem_wreg        (mem_to_id_reg   ),
         .mem_waddr       (mem_to_id_add   ),
-        .mem_wdata       (mem_to_id_data  ),
+        .mem_wdata       (mem_to_id_data  )
     );
 
     EX u_EX(
