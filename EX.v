@@ -16,7 +16,7 @@ module EX(
     
     output wire ex_wreg,
     output wire [4:0] ex_waddr,
-    output wire [31:0] ex_wdata,
+    output wire [31:0] ex_wdata
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
