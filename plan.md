@@ -85,7 +85,7 @@ module regfile(
 endmodule
 ```
 
-那么我们要做的第一步就是在`ID.v`上加入几根(\**我这里没有用错量词，因为类型是wire 导线，导线可不就是一根根的吗*)检查从EX和MEM段传来的参数，然后修改`lib/regfile.v`使`rdataX`在调取内容前遭到截流：
+那么我们要做的第一步就是在`ID.v`上加入几根(\**我这里没有用错量词，因为类型是wire 导线，导线可不就是一根根的吗*)变量后，检查从EX和MEM段传来的参数，然后修改`lib/regfile.v`使`rdataX`在调取内容前遭到截流：
 
 ```verilog
     // read out 1
@@ -149,3 +149,60 @@ endmodule
 ```
 
 然后下一步就是设计stall相关。
+
+-- 待续 --
+
+### 2. Операция Труд 劳动行动 3. Операция Память 记忆行动
+
+在写出了局部通路之后我们再运行发现提示变成了这个：
+
+```
+--------------------------------------------------------------
+[   2327 ns] Error!!!
+    reference: PC = 0xbfc006f8, wb_rf_wnum = 0x19, wb_rf_wdata = 0x9fc00704
+    mycpu    : PC = 0xbfc00714, wb_rf_wnum = 0x19, wb_rf_wdata = 0xbfc00000
+--------------------------------------------------------------
+```
+
+比照`test.s`：
+
+```s
+bfc006b8 <locate>:
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:271
+bfc006b8:	3c04bfaf 	lui	a0,0xbfaf
+bfc006bc:	3484f008 	ori	a0,a0,0xf008
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:272
+bfc006c0:	3c05bfaf 	lui	a1,0xbfaf
+bfc006c4:	34a5f004 	ori	a1,a1,0xf004
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:273
+bfc006c8:	3c11bfaf 	lui	s1,0xbfaf
+bfc006cc:	3631f010 	ori	s1,s1,0xf010
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:275
+bfc006d0:	24090002 	li	t1,2
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:276
+bfc006d4:	240a0001 	li	t2,1
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:277
+bfc006d8:	3c130000 	lui	s3,0x0
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:279
+bfc006dc:	ac890000 	sw	t1,0(a0)
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:280
+bfc006e0:	acaa0000 	sw	t2,0(a1)
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:281
+bfc006e4:	ae330000 	sw	s3,0(s1)
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:283
+bfc006e8:	3c100000 	lui	s0,0x0
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:285
+bfc006ec:	3c09bfc0 	lui	t1,0xbfc0
+bfc006f0:	25290704 	addiu	t1,t1,1796
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:286
+bfc006f4:	3c0a2000 	lui	t2,0x2000
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:287
+bfc006f8:	012ac823 	subu	t9,t1,t2
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:288
+bfc006fc:	03200008 	jr	t9
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:289
+bfc00700:	00000000 	nop
+```
+
+报错位从481L 0xbfc006bc后移到了508L 0xbfc006f8。很明显，报错的原因是缺少`subu`指令。因此，先添加几个亟需的指令是当务之急。
+
