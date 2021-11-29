@@ -153,11 +153,12 @@ module ID(
     assign inst_addiu   = op_d[6'b00_1001];
     assign inst_beq     = op_d[6'b00_0100];
     assign inst_bne     = op_d[6'b00_0101];
+    assign inst_subu    = op_d[6'b00_0000];
 
 
 
     // rs to reg1
-    assign sel_alu_src1[0] = inst_ori | inst_addiu;
+    assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu;
 
     // pc to reg1
     assign sel_alu_src1[1] = 1'b0;
@@ -167,7 +168,7 @@ module ID(
 
     
     // rt to reg2
-    assign sel_alu_src2[0] = 1'b0;
+    assign sel_alu_src2[0] = inst_subu;
     
     // imm_sign_extend to reg2
     assign sel_alu_src2[1] = inst_lui | inst_addiu;
@@ -181,7 +182,7 @@ module ID(
 
 
     assign op_add = inst_addiu;
-    assign op_sub = 1'b0;
+    assign op_sub = inst_subu;
     assign op_slt = 1'b0;
     assign op_sltu = 1'b0;
     assign op_and = 1'b0;
