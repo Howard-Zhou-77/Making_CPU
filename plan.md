@@ -206,3 +206,12 @@ bfc00700:	00000000 	nop
 
 报错位从481L 0xbfc006bc后移到了508L 0xbfc006f8。很明显，报错的原因是缺少`subu`指令。因此，先添加几个亟需的指令是当务之急。
 
+`subu`是很好添的，填上之后我们看到下一个错误点在bfc00714 - `lui`。奇怪的是，这是个已经实现了的指令。
+
+```s
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:295
+bfc00710:	00000000 	nop
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/start.S:297
+bfc00714:	3c19bfc0 	lui	t9,0xbfc0
+bfc00718:	27390724 	addiu	t9,t9,1828
+```

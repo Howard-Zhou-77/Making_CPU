@@ -214,7 +214,7 @@ module ID(
 
 
     // store in [rd]
-    assign sel_rf_dst[0] = 1'b0;
+    assign sel_rf_dst[0] = inst_subu;
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu;
     // store in [31]
