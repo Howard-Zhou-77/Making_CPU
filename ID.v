@@ -154,6 +154,7 @@ module ID(
     assign inst_beq     = op_d[6'b00_0100];
     assign inst_bne     = op_d[6'b00_0101];
     assign inst_subu    = op_d[6'b00_0000];
+    assign inst_jal     = op_d[6'b00_0011];
 
 
 
@@ -161,7 +162,7 @@ module ID(
     assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu;
 
     // pc to reg1
-    assign sel_alu_src1[1] = 1'b0;
+    assign sel_alu_src1[1] = inst_jal;
 
     // sa_zero_extend to reg1
     assign sel_alu_src1[2] = 1'b0;
@@ -209,7 +210,7 @@ module ID(
 
 
     // regfile sotre enable
-    assign rf_we = inst_ori | inst_lui | inst_addiu;
+    assign rf_we = inst_ori | inst_lui | inst_addiu | inst_jal;
 
 
 
@@ -218,7 +219,7 @@ module ID(
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu;
     // store in [31]
-    assign sel_rf_dst[2] = 1'b0;
+    assign sel_rf_dst[2] = inst_jal;
 
     // sel for regfile address
     assign rf_waddr = {5{sel_rf_dst[0]}} & rd 
@@ -256,8 +257,10 @@ module ID(
 
     assign rs_eq_rt = (rdata1 == rdata2);
 
-    assign br_e = (inst_beq & rs_eq_rt) | (inst_bne & ~rs_eq_rt);
-    assign br_addr = (inst_beq ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 32'b0)|(inst_bne ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 32'b0);
+    assign br_e = (inst_beq & rs_eq_rt) | (inst_bne & ~rs_eq_rt) | inst_jal;
+    assign br_addr = (inst_beq ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
+                      inst_bne ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) :
+                      inst_jal ? (pc_plus_4[31:28],instr_index,2'b0) : 32'b0);
 
     assign br_bus = {
         br_e,
