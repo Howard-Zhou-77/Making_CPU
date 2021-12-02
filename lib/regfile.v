@@ -17,7 +17,11 @@ module regfile(
     
     input wire mem_wreg,
     input wire [4:0] mem_waddr,
-    input wire [31:0] mem_wdata
+    input wire [31:0] mem_wdata,
+
+    input wire wb_wreg,
+    input wire [4:0] wb_waddr,
+    input wire [31:0] wb_wdata 
 );
     reg [31:0] reg_array [31:0];
     // write
@@ -30,10 +34,12 @@ module regfile(
     // read out 1
     assign rdata1 = (raddr1 == 5'b0) ? 32'b0 : 
                     (ex_wreg == 1'b1 && ex_waddr==raddr1) ? ex_wdata :
-                    (mem_wreg == 1'b1 && mem_waddr==raddr1) ? mem_wdata : reg_array[raddr1];
+                    (mem_wreg == 1'b1 && mem_waddr==raddr1) ? mem_wdata : 
+                    (wb_wreg == 1'b1 && wb_waddr==raddr1) ? wb_wdata : reg_array[raddr1];
 
     // read out2
     assign rdata2 = (raddr2 == 5'b0) ? 32'b0 :
                     (ex_wreg == 1'b1 && ex_waddr==raddr2) ? ex_wdata :
-                    (mem_wreg == 1'b1 && mem_waddr==raddr2) ? mem_wdata : reg_array[raddr2];
+                    (mem_wreg == 1'b1 && mem_waddr==raddr2) ? mem_wdata :
+                    (wb_wreg == 1'b1 && wb_waddr==raddr2) ? wb_wdata: reg_array[raddr2];
 endmodule

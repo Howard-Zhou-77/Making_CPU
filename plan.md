@@ -215,3 +215,34 @@ bfc00710:	00000000 	nop
 bfc00714:	3c19bfc0 	lui	t9,0xbfc0
 bfc00718:	27390724 	addiu	t9,t9,1828
 ```
+
+在看了前面的指令后我发觉他是让我补`jal`指令。有点艰辛：我看了两天才明白它要我把`pc`和8加一起送进`alu`做`add`。接下来一下子到了0x510c:
+```s
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/inst/n1_lui.S:8
+bfc05104:	24120000 	li	s2,0
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/inst/n1_lui.S:9
+bfc05108:	3c0a0001 	lui	t2,0x1
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/inst/n1_lui.S:11
+bfc0510c:	24090000 	li	t1,0
+/media/sf_nscscc2019/develop/trash/func_test_v0.03/soft/func/inst/n1_lui.S:12
+```
+恭喜我们进入了第一个测试点。此时我们要补充的是`li`。看它机器码开头是`0x24(0010 0100)`，我突然反应过来：这不tm的addiu的操作码吗？那么实际上这个码是：
+```
+0010 0100 0000 1001 0000 0000 0000 0000
+->
+001001 00000 01001 0000000000000000
+```
+也就是：
+```Assembly
+addiu t0,t9 0
+```
+
+$t_9=t_0+0$ 。
+再看报错：
+```
+[   2337 ns] Error!!!
+    reference: PC = 0x9fc05108, wb_rf_wnum = 0x0a, wb_rf_wdata = 0x00010000
+    mycpu    : PC = 0xbfc0510c, wb_rf_wnum = 0x09, wb_rf_wdata = 0x00000000
+--------------------------------------------------------------
+```
+`wb_rf_wnum`是期望访问的寄存器，

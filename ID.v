@@ -24,7 +24,11 @@ module ID(
     
     input wire mem_wreg,
     input wire [4:0] mem_waddr,
-    input wire [31:0] mem_wdata 
+    input wire [31:0] mem_wdata ,
+
+    input wire wb_wreg,
+    input wire [4:0] wb_waddr,
+    input wire [31:0] wb_wdata 
 
 );
 
@@ -105,7 +109,11 @@ module ID(
         
         .mem_wreg    (mem_wreg  ),
         .mem_waddr   (mem_waddr ),
-        .mem_wdata   (mem_wdata )
+        .mem_wdata   (mem_wdata ),
+
+        .wb_wreg    (wb_wreg  ),
+        .wb_waddr   (wb_waddr ),
+        .wb_wdata   (wb_wdata )
     );
 
     assign opcode = inst[31:26];
@@ -153,13 +161,13 @@ module ID(
     assign inst_addiu   = op_d[6'b00_1001];
     assign inst_beq     = op_d[6'b00_0100];
     assign inst_bne     = op_d[6'b00_0101];
-    assign inst_subu    = op_d[6'b00_0000];
+    assign inst_subu    = (func == 6'b10_0010)? op_d[6'b00_0000]:0;
     assign inst_jal     = op_d[6'b00_0011];
-
+    assign inst_jr      = (func == 6'b00_1000)? op_d[6'b00_0000]:0;
 
 
     // rs to reg1
-    assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu;
+    assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu | inst_jr;
 
     // pc to reg1
     assign sel_alu_src1[1] = inst_jal;
@@ -175,14 +183,14 @@ module ID(
     assign sel_alu_src2[1] = inst_lui | inst_addiu;
 
     // 32'b8 to reg2
-    assign sel_alu_src2[2] = 1'b0;
+    assign sel_alu_src2[2] = inst_jal;
 
     // imm_zero_extend to reg2
     assign sel_alu_src2[3] = inst_ori;
 
 
 
-    assign op_add = inst_addiu;
+    assign op_add = inst_addiu|inst_jal;
     assign op_sub = inst_subu;
     assign op_slt = 1'b0;
     assign op_sltu = 1'b0;
@@ -253,14 +261,15 @@ module ID(
     wire rs_le_z;
     wire rs_lt_z;
     wire [31:0] pc_plus_4;
-    assign pc_plus_4 = id_pc + 32'h4;
 
+    assign pc_plus_4 = id_pc + 32'h4;
     assign rs_eq_rt = (rdata1 == rdata2);
 
-    assign br_e = (inst_beq & rs_eq_rt) | (inst_bne & ~rs_eq_rt) | inst_jal;
+    assign br_e = (inst_beq & rs_eq_rt) | (inst_bne & ~rs_eq_rt) | inst_jal | inst_jr;
     assign br_addr = (inst_beq ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
                       inst_bne ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) :
-                      inst_jal ? (pc_plus_4[31:28],instr_index,2'b0) : 32'b0);
+                      inst_jal ? ({pc_plus_4[31:28],instr_index,2'b0}) : 
+                      inst_jr ? rdata1 : 32'b0);
 
     assign br_bus = {
         br_e,

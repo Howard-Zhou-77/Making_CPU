@@ -35,6 +35,9 @@ module mycpu_core(
     wire mem_to_id_reg;
     wire [4:0] mem_to_id_add;
     wire [31:0] mem_to_id_data;
+    wire wb_to_id_reg;
+    wire [4:0] wb_to_id_add;
+    wire [31:0] wb_to_id_data;
 
     IF u_IF(
     	.clk             (clk             ),
@@ -64,7 +67,10 @@ module mycpu_core(
         .ex_wdata        (ex_to_id_data   ),
         .mem_wreg        (mem_to_id_reg   ),
         .mem_waddr       (mem_to_id_add   ),
-        .mem_wdata       (mem_to_id_data  )
+        .mem_wdata       (mem_to_id_data  ),
+        .wb_wreg         (wb_to_id_reg    ),
+        .wb_waddr        (wb_to_id_add    ),
+        .wb_wdata        (wb_to_id_data   )
     );
 
     EX u_EX(
@@ -103,7 +109,10 @@ module mycpu_core(
         .debug_wb_pc       (debug_wb_pc       ),
         .debug_wb_rf_wen   (debug_wb_rf_wen   ),
         .debug_wb_rf_wnum  (debug_wb_rf_wnum  ),
-        .debug_wb_rf_wdata (debug_wb_rf_wdata )
+        .debug_wb_rf_wdata (debug_wb_rf_wdata ),
+        .wb_wreg           (wb_to_id_reg      ),
+        .wb_waddr          (wb_to_id_add      ),
+        .wb_wdata          (wb_to_id_data     )
     );
 
     CTRL u_CTRL(
