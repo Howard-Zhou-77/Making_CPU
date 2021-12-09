@@ -161,14 +161,15 @@ module ID(
     assign inst_addiu   = op_d[6'b00_1001];
     assign inst_beq     = op_d[6'b00_0100];
     assign inst_bne     = op_d[6'b00_0101];
-    assign inst_subu    = (func == 6'b10_0011)? op_d[6'b00_0000]:0;
+    assign inst_subu    = func_d[6'b10_0011] & op_d[6'b00_0000];
     assign inst_jal     = op_d[6'b00_0011];
-    assign inst_jr      = (func == 6'b00_1000)? op_d[6'b00_0000]:0;
+    assign inst_jr      = func_d[6'b00_1000] & op_d[6'b00_0000];
     assign inst_lw      = op_d[6'b10_0011];
-
+    assign inst_addu    = op_d[6'b00_0000] & func_d[6'b10_0001];
+    assign inst_or      = op_d[6'b00_0000] & func_d[6'b10_0101];
 
     // rs to reg1
-    assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu | inst_jr | inst_lw;
+    assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu | inst_jr | inst_lw | inst_addu | inst_or;
 
     // pc to reg1
     assign sel_alu_src1[1] = inst_jal;
@@ -178,7 +179,7 @@ module ID(
 
     
     // rt to reg2
-    assign sel_alu_src2[0] = inst_subu;
+    assign sel_alu_src2[0] = inst_subu | inst_addu | inst_or;
     
     // imm_sign_extend to reg2
     assign sel_alu_src2[1] = inst_lui | inst_addiu | inst_lw;
@@ -191,13 +192,13 @@ module ID(
 
 
 
-    assign op_add = inst_addiu|inst_jal|inst_lw;
+    assign op_add = inst_addiu|inst_jal|inst_lw|inst_addu;
     assign op_sub = inst_subu;
     assign op_slt = 1'b0;
     assign op_sltu = 1'b0;
     assign op_and = 1'b0;
     assign op_nor = 1'b0;
-    assign op_or = inst_ori;
+    assign op_or = inst_ori|inst_or;
     assign op_xor = 1'b0;
     assign op_sll = 1'b0;
     assign op_srl = 1'b0;
@@ -219,12 +220,12 @@ module ID(
 
 
     // regfile sotre enable
-    assign rf_we = inst_ori | inst_lui | inst_addiu | inst_jal;
+    assign rf_we = inst_ori | inst_lui | inst_addiu | inst_jal | inst_subu | inst_addu | inst_or;
 
 
 
     // store in [rd]
-    assign sel_rf_dst[0] = inst_subu;
+    assign sel_rf_dst[0] = inst_subu | inst_addu | inst_or;
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu | inst_lw;
     // store in [31]
