@@ -87,6 +87,8 @@ module EX(
 
     assign ex_result = alu_result;
 
+    assign data_sram_addr = sel_rf_res ? alu_result : 32'b0;
+
     assign ex_to_mem_bus = {
         ex_pc,          // 75:44
         data_ram_en,    // 43
