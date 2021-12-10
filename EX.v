@@ -13,10 +13,11 @@ module EX(
     output wire [3:0] data_sram_wen,
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata,
-    
+
     output wire ex_wreg,
     output wire [4:0] ex_waddr,
-    output wire [31:0] ex_wdata
+    output wire [31:0] ex_wdata,
+    output wire [5:0] ex_opcode
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
@@ -207,6 +208,7 @@ module EX(
     assign ex_wreg=rf_we;
     assign ex_waddr=rf_waddr;
     assign ex_wdata=ex_result;
+    assign ex_opcode=inst[31:26];
     
     
 endmodule

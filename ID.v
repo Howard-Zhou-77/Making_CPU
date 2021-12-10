@@ -20,6 +20,7 @@ module ID(
     input wire ex_wreg,
     input wire [4:0] ex_waddr,
     input wire [31:0] ex_wdata,
+    input wire [5:0] ex_opcode,
 
     
     input wire mem_wreg,
@@ -168,7 +169,7 @@ module ID(
     assign inst_addu    = op_d[6'b00_0000] & func_d[6'b10_0001];
     assign inst_or      = op_d[6'b00_0000] & func_d[6'b10_0101];
     assign inst_sll     = op_d[6'b00_0000] & func_d[6'b00_0000];
-    assign inst_sw      = op_d[6'b10_1011 ];
+    assign inst_sw      = op_d[6'b10_1011];
 
 
     // rs to reg1
@@ -223,7 +224,7 @@ module ID(
 
 
     // regfile sotre enable
-    assign rf_we = inst_ori | inst_lui | inst_addiu | inst_jal | inst_subu | inst_addu | inst_or;
+    assign rf_we = inst_ori | inst_lui | inst_addiu | inst_jal | inst_subu | inst_addu | inst_or | inst_lw;
 
 
 
@@ -281,6 +282,7 @@ module ID(
         br_addr
     };
     
-
+    //stall 
+    assign stallreq = (ex_opcode == 6'b10_0011) ? ((ex_waddr==rs)&(sel_alu_src1[0]==1))|((ex_waddr==rt)&(sel_alu_src2[0]==1)) : 0;
 
 endmodule
