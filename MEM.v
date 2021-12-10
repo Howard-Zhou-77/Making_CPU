@@ -62,7 +62,7 @@ module MEM(
         rf_waddr,   // 36:32
         rf_wdata    // 31:0
     };
-
+    
     assign mem_wreg = rf_we;
     assign mem_waddr = rf_waddr;
     assign mem_wdata = rf_wdata;
