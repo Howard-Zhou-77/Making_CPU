@@ -176,6 +176,7 @@ module ID(
     assign inst_sltiu   = op_d[6'b00_1011];
     assign inst_sltu    = op_d[6'b00_0000] & func_d[6'b10_1011];
     assign inst_xor     = op_d[6'b00_0000] & func_d[6'b10_0110];
+    assign inst_j       = op_d[6'b00_0010];
 
     // rs to reg1
     assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu | inst_jr | inst_lw | inst_addu | 
@@ -283,10 +284,10 @@ module ID(
     assign pc_plus_4 = id_pc + 32'h4;
     assign rs_eq_rt = (rdata1 == rdata2);
 
-    assign br_e = (inst_beq & rs_eq_rt) | (inst_bne & ~rs_eq_rt) | inst_jal | inst_jr;
+    assign br_e = (inst_beq & rs_eq_rt) | (inst_bne & ~rs_eq_rt) | inst_jal | inst_jr | inst_j;
     assign br_addr = (inst_beq ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
                       inst_bne ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) :
-                      inst_jal ? ({pc_plus_4[31:28],instr_index,2'b0}) : 
+                      inst_jal | inst_j ? ({pc_plus_4[31:28],instr_index,2'b0}) : 
                       inst_jr ? rdata1 : 32'b0);
 
     assign br_bus = {
