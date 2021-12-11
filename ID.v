@@ -20,7 +20,7 @@ module ID(
     input wire ex_wreg,
     input wire [4:0] ex_waddr,
     input wire [31:0] ex_wdata,
-    input wire [5:0] ex_opcode,
+    input wire ex_data_ram_en,
 
     
     input wire mem_wreg,
@@ -29,7 +29,7 @@ module ID(
 
     input wire wb_wreg,
     input wire [4:0] wb_waddr,
-    input wire [31:0] wb_wdata 
+    input wire [31:0] wb_wdata
 
 );
 
@@ -130,7 +130,7 @@ module ID(
     assign offset = inst[15:0];
     assign sel = inst[2:0];
 
-    wire inst_ori, inst_lui, inst_addiu, inst_beq, inst_bne, inst_sll, inst_sw;
+    wire inst_ori, inst_lui, inst_addiu, inst_beq, inst_bne, inst_sll, inst_sw ,inst_lw;
 
     wire op_add, op_sub, op_slt, op_sltu;
     wire op_and, op_nor, op_or, op_xor;
@@ -219,12 +219,13 @@ module ID(
     assign data_ram_en = inst_lw | inst_sw;
 
     // write enable
-    assign data_ram_wen = inst_sw ? 4'b1111 : 4'b0000;
+    assign data_ram_wen = inst_sw ? 4'b1111 : 
+                          inst_lw ? 4'b0001 : 4'b0;
 
 
 
     // regfile sotre enable
-    assign rf_we = inst_ori | inst_lui | inst_addiu | inst_jal | inst_subu | inst_addu | inst_or | inst_lw;
+    assign rf_we = inst_ori | inst_lui | inst_addiu | inst_jal | inst_subu | inst_addu | inst_or | inst_lw | inst_sll;
 
 
 
@@ -240,8 +241,8 @@ module ID(
                     | {5{sel_rf_dst[1]}} & rt
                     | {5{sel_rf_dst[2]}} & 32'd31;
 
-    // 0 from alu_res ; 1 from ld_res
-    assign sel_rf_res = inst_lw | inst_sw; 
+    // 0 from alu_res ; 1 from load_res
+    assign sel_rf_res = inst_lw ; 
 
     assign id_to_ex_bus = {
         id_pc,          // 158:127
@@ -283,6 +284,7 @@ module ID(
     };
     
     //stall 
-    assign stallreq = (ex_opcode == 6'b10_0011) ? ((ex_waddr==rs)&(sel_alu_src1[0]==1))|((ex_waddr==rt)&(sel_alu_src2[0]==1)) : 0;
+    assign stallreq = (ex_data_ram_en &(((ex_waddr==rs) & (sel_alu_src1[0]==1))|((ex_waddr==rt) & (sel_alu_src2[0]==1)))) ? 1 : 0;
+    assign stallreq = (ex_data_ram_en &(((ex_waddr==rs) & (sel_alu_src1[0]==1))|((ex_waddr==rt) & (sel_alu_src2[0]==1)))) ? id_pc : 0;
 
 endmodule
