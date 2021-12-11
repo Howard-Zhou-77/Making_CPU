@@ -53,7 +53,7 @@ module IF(
     
     assign inst_sram_en = ce_reg;
     assign inst_sram_wen = 4'b0;
-    assign inst_sram_addr = pc_reg;
+    assign inst_sram_addr = (stall[0] == `NoStop) ? pc_reg : pc_reg-32'h4;
     assign inst_sram_wdata = 32'b0;
     assign if_to_id_bus = {
         ce_reg,

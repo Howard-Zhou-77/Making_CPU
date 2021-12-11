@@ -87,11 +87,8 @@ module EX(
     );
 
     assign ex_result = alu_result;
-    
-    wire inst_sw;
-    assign inst_sw  = (data_ram_wen == 4'b1111) ? 1:0;
 
-    assign ex_opl = inst_sw ? 1 : 0;
+    assign ex_opl = inst[31:26]==6'b10_0011 ? 1 : 0;
 
     assign data_sram_en = data_ram_en;
     
@@ -113,7 +110,7 @@ module EX(
 
     // MUL part
     wire [63:0] mul_result;
-    wire mul_signed; // 有符号乘法标�?
+    wire mul_signed; // 有符号乘法标�?
 
     mul u_mul(
     	.clk        (clk            ),
@@ -215,7 +212,7 @@ module EX(
         end
     end
 
-    // mul_result �? div_result 可以直接使用
+    // mul_result �? div_result 可以直接使用
     assign ex_wreg=rf_we;
     assign ex_waddr=rf_waddr;
     assign ex_wdata=ex_result;
