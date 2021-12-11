@@ -211,13 +211,13 @@ module ID(
 
     // imm_sign_extend to reg2
     assign sel_alu_src2[1] = inst_lui | inst_addiu | inst_lw | inst_sw | inst_slti | inst_sltiu |
-                             inst_andi | inst_xori | inst_addi;
+                             inst_andi | inst_addi;
 
     // 32'b8 to reg2
     assign sel_alu_src2[2] = inst_jal;
 
     // imm_zero_extend to reg2
-    assign sel_alu_src2[3] = inst_ori;
+    assign sel_alu_src2[3] = inst_ori | inst_xori;
 
 
 
