@@ -53,9 +53,9 @@ module MEM(
 
     // TODO:实现读内存的代码
     wire inst_lw;
-    assign inst_lw  = data_ram_wen == 4'b0001 ? 1:0;
+    assign inst_lw  = data_ram_wen == 4'b0000 ? 1:0;
 
-    assign mem_result = (data_ram_en && inst_lw) ? data_sram_rdata : 32'b0;
+    assign mem_result =  data_sram_rdata;
 
     assign rf_wdata = sel_rf_res ? mem_result : ex_result;
 

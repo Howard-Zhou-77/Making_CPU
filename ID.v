@@ -20,7 +20,7 @@ module ID(
     input wire ex_wreg,
     input wire [4:0] ex_waddr,
     input wire [31:0] ex_wdata,
-    input wire ex_data_ram_en,
+    input wire ex_opl,
 
     
     input wire mem_wreg,
@@ -220,7 +220,7 @@ module ID(
 
     // write enable
     assign data_ram_wen = inst_sw ? 4'b1111 : 
-                          inst_lw ? 4'b0001 : 4'b0;
+                          inst_lw ? 4'b0000 : 4'b0;
 
 
 
@@ -284,7 +284,7 @@ module ID(
     };
     
     //stall 
-    assign stallreq = (ex_data_ram_en &(((ex_waddr==rs) & (sel_alu_src1[0]==1))|((ex_waddr==rt) & (sel_alu_src2[0]==1)))) ? 1 : 0;
-    assign stallreq = (ex_data_ram_en &(((ex_waddr==rs) & (sel_alu_src1[0]==1))|((ex_waddr==rt) & (sel_alu_src2[0]==1)))) ? id_pc : 0;
+    assign stallreq = (ex_opl &(((ex_waddr==rs) & (sel_alu_src1[0]==1))|((ex_waddr==rt) & (sel_alu_src2[0]==1)))) ? 1 : 0;
+    assign stallreq = (ex_opl &(((ex_waddr==rs) & (sel_alu_src1[0]==1))|((ex_waddr==rt) & (sel_alu_src2[0]==1)))) ? id_pc : 0;
 
 endmodule

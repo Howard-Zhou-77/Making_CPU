@@ -17,7 +17,7 @@ module EX(
     output wire ex_wreg,
     output wire [4:0] ex_waddr,
     output wire [31:0] ex_wdata,
-    output wire ex_data_ram_en
+    output wire ex_opl
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
@@ -90,12 +90,14 @@ module EX(
     
     wire inst_sw;
     assign inst_sw  = (data_ram_wen == 4'b1111) ? 1:0;
-    
+
+    assign ex_opl = inst_sw ? 1 : 0;
+
     assign data_sram_en = data_ram_en;
     
-    assign data_sram_wen = inst_sw ? data_ram_wen : 4'b0; //mem wen
+    assign data_sram_wen = data_ram_wen; //mem wen
 
-    assign data_sram_addr = alu_result ; //load mem addr
+    assign data_sram_addr = ex_result ; //
 
     assign data_sram_wdata = rf_rdata2; //store data
 
@@ -111,7 +113,7 @@ module EX(
 
     // MUL part
     wire [63:0] mul_result;
-    wire mul_signed; // 有符号乘法标记
+    wire mul_signed; // 有符号乘法标�?
 
     mul u_mul(
     	.clk        (clk            ),
@@ -213,11 +215,10 @@ module EX(
         end
     end
 
-    // mul_result 和 div_result 可以直接使用
+    // mul_result �? div_result 可以直接使用
     assign ex_wreg=rf_we;
     assign ex_waddr=rf_waddr;
     assign ex_wdata=ex_result;
-    assign ex_data_ram_en=data_ram_en;
     
     
 endmodule

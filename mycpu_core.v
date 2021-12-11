@@ -32,7 +32,7 @@ module mycpu_core(
     wire ex_to_id_reg;
     wire [4:0] ex_to_id_add;
     wire [31:0] ex_to_id_data;
-    wire ex_data_ram_en;
+    wire ex_opl;
     wire mem_to_id_reg;
     wire [4:0] mem_to_id_add;
     wire [31:0] mem_to_id_data;
@@ -66,7 +66,7 @@ module mycpu_core(
         .ex_wreg         (ex_to_id_reg    ),
         .ex_waddr        (ex_to_id_add    ),
         .ex_wdata        (ex_to_id_data   ),
-        .ex_data_ram_en  (ex_data_ram_en  ),
+        .ex_opl          (ex_opl          ),
         .mem_wreg        (mem_to_id_reg   ),
         .mem_waddr       (mem_to_id_add   ),
         .mem_wdata       (mem_to_id_data  ),
@@ -88,7 +88,7 @@ module mycpu_core(
         .ex_wreg         (ex_to_id_reg    ),
         .ex_waddr        (ex_to_id_add    ),
         .ex_wdata        (ex_to_id_data   ),
-        .ex_data_ram_en  (ex_data_ram_en  )
+        .ex_opl          (ex_opl          )
     );
 
     MEM u_MEM(
