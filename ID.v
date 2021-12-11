@@ -183,11 +183,13 @@ module ID(
     assign inst_andi    = op_d[6'b00_1100];
     assign inst_xori    = op_d[6'b00_1110];
     assign inst_sllv    = op_d[6'b00_0000] & func_d[6'b00_0100];
+    assign inst_addi    = op_d[6'b00_1000];
 
     // rs to reg1
     assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu | inst_jr | inst_lw | inst_addu | 
                              inst_or | inst_sw | inst_bne | inst_slt | inst_slti | inst_sltiu | 
-                             inst_sltu | inst_xor | inst_add | inst_sub | inst_and | inst_andi | inst_xori | inst_sllv;
+                             inst_sltu | inst_xor | inst_add | inst_sub | inst_and | inst_andi | 
+                             inst_xori | inst_sllv | inst_addi;
 
     // pc to reg1
     assign sel_alu_src1[1] = inst_jal;
@@ -202,7 +204,7 @@ module ID(
     
     // imm_sign_extend to reg2
     assign sel_alu_src2[1] = inst_lui | inst_addiu | inst_lw | inst_sw | inst_slti | inst_sltiu |
-                             inst_andi | inst_xori;
+                             inst_andi | inst_xori | inst_addi;
 
     // 32'b8 to reg2
     assign sel_alu_src2[2] = inst_jal;
@@ -212,7 +214,7 @@ module ID(
 
 
 
-    assign op_add = inst_addiu | inst_jal | inst_lw | inst_addu | inst_sw | inst_add;
+    assign op_add = inst_addiu | inst_jal | inst_lw | inst_addu | inst_sw | inst_add | inst_addi;
     assign op_sub = inst_subu | inst_sub;
     assign op_slt = inst_slt | inst_slti;
     assign op_sltu = inst_sltiu | inst_sltu;
@@ -244,7 +246,7 @@ module ID(
 
     assign rf_we = inst_ori | inst_lui | inst_addiu | inst_jal | inst_subu | inst_addu 
                  | inst_or | inst_lw | inst_sll | inst_slt | inst_slti | inst_sltiu | inst_sltu
-                 | inst_xor | inst_add | inst_sub | inst_and | inst_andi | inst_xori | inst_sllv;
+                 | inst_xor | inst_add | inst_sub | inst_and | inst_andi | inst_xori | inst_sllv | inst_addi;
 
 
 
@@ -254,7 +256,7 @@ module ID(
                            inst_xor | inst_add | inst_sub | inst_and | inst_sllv;
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu | inst_lw | inst_slti | inst_sltiu | 
-                           inst_andi | inst_xori;
+                           inst_andi | inst_xori | inst_addi;
     // store in [31]
     assign sel_rf_dst[2] = inst_jal;
 
