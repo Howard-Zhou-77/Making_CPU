@@ -17,7 +17,7 @@ module EX(
     output wire ex_wreg,
     output wire [4:0] ex_waddr,
     output wire [31:0] ex_wdata,
-    output wire [5:0] ex_opcode
+    output wire ex_data_ram_en
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
@@ -87,8 +87,17 @@ module EX(
     );
 
     assign ex_result = alu_result;
+    
+    wire inst_sw;
+    assign inst_sw  = (data_ram_wen == 4'b1111) ? 1:0;
+    
+    assign data_sram_en = data_ram_en;
+    
+    assign data_sram_wen = inst_sw ? data_ram_wen : 4'b0; //mem wen
 
-    assign data_sram_addr = sel_rf_res ? alu_result : 32'b0;
+    assign data_sram_addr = alu_result ; //load mem addr
+
+    assign data_sram_wdata = rf_rdata2; //store data
 
     assign ex_to_mem_bus = {
         ex_pc,          // 75:44
@@ -208,7 +217,7 @@ module EX(
     assign ex_wreg=rf_we;
     assign ex_waddr=rf_waddr;
     assign ex_wdata=ex_result;
-    assign ex_opcode=inst[31:26];
+    assign ex_data_ram_en=data_ram_en;
     
     
 endmodule
