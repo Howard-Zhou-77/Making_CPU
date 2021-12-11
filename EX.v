@@ -76,7 +76,7 @@ module EX(
                       sel_alu_src1[2] ? sa_zero_extend : rf_rdata1;
 
     assign alu_src2 = sel_alu_src2[1] ? imm_sign_extend :
-                      sel_alu_src2[2] ? 32'd8 :
+                      sel_alu_src2[2] ? 32'd8 : // bgtzal...
                       sel_alu_src2[3] ? imm_zero_extend : rf_rdata2;
     
     alu u_alu(

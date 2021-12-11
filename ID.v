@@ -132,7 +132,7 @@ module ID(
 
     wire inst_ori, inst_lui, inst_addiu, inst_beq, inst_bne, inst_sll, inst_sw, inst_lw, inst_slt, 
          inst_slti, inst_sltiu, inst_sltu, inst_xor, inst_j, inst_sra, inst_srav, inst_srl, inst_srlv,
-         insr_nor, inst_bgez, inst_bgtz, inst_blez, inst_bltz;
+         insr_nor, inst_bgez, inst_bgtz, inst_blez, inst_bltz, inst_bltzal, inst_bgezal, inst_jalr;
 
     wire op_add, op_sub, op_slt, op_sltu;
     wire op_and, op_nor, op_or, op_xor;
@@ -194,14 +194,18 @@ module ID(
     assign inst_bgtz    = op_d[6'b00_0111] & rt_d[5'b00_000]; //rt 00000
     assign inst_blez    = op_d[6'b00_0110] & rt_d[5'b00_000]; //rt 00000
     assign inst_bltz    = op_d[6'b00_0001] & rt_d[5'b00_000]; //rt 00000
+    assign inst_bltzal  = op_d[6'b00_0001] & rt_d[5'b10_000]; //rt 10000
+    assign inst_bgezal  = op_d[6'b00_0001] & rt_d[5'b10_001]; //rt 10001
+    assign inst_jalr    = op_d[6'b00_0000] & func_d[6'b00_1001];
     // rs to reg1
     assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu | inst_jr | inst_lw | inst_addu | 
                              inst_or | inst_sw | inst_bne | inst_slt | inst_slti | inst_sltiu | 
                              inst_sltu | inst_xor | inst_add | inst_sub | inst_and | inst_andi | 
-                             inst_xori | inst_sllv | inst_addi | inst_srav | inst_srlv | inst_nor;
+                             inst_xori | inst_sllv | inst_addi | inst_srav | inst_srlv | inst_nor |
+                             inst_jalr;
 
     // pc to reg1
-    assign sel_alu_src1[1] = inst_jal;
+    assign sel_alu_src1[1] = inst_jal | inst_bltzal | inst_bgezal | inst_jalr;
 
     // sa_zero_extend to reg1
     assign sel_alu_src1[2] = inst_sll | inst_sra | inst_srl;
@@ -217,14 +221,15 @@ module ID(
                              inst_addi;
 
     // 32'b8 to reg2
-    assign sel_alu_src2[2] = inst_jal;
+    assign sel_alu_src2[2] = inst_jal | inst_bltzal | inst_bgezal | inst_jalr;
 
     // imm_zero_extend to reg2
     assign sel_alu_src2[3] = inst_ori | inst_xori | inst_andi;
 
 
 
-    assign op_add = inst_addiu | inst_jal | inst_lw | inst_addu | inst_sw | inst_add | inst_addi;
+    assign op_add = inst_addiu | inst_jal | inst_lw | inst_addu | inst_sw | inst_add | inst_addi | 
+                    inst_bltzal | inst_bgezal | inst_jalr;
     assign op_sub = inst_subu | inst_sub;
     assign op_slt = inst_slt | inst_slti;
     assign op_sltu = inst_sltiu | inst_sltu;
@@ -257,7 +262,8 @@ module ID(
     assign rf_we = inst_ori | inst_lui | inst_addiu | inst_jal | inst_subu | inst_addu 
                  | inst_or | inst_lw | inst_sll | inst_slt | inst_slti | inst_sltiu | inst_sltu
                  | inst_xor | inst_add | inst_sub | inst_and | inst_andi | inst_xori | inst_sllv 
-                 | inst_addi | inst_sra | inst_srav | inst_srl | inst_srlv | inst_nor;
+                 | inst_addi | inst_sra | inst_srav | inst_srl | inst_srlv | inst_nor | inst_bltzal
+                 | inst_bgezal | inst_jalr;
 
 
 
@@ -266,12 +272,12 @@ module ID(
     // store in [rd]
     assign sel_rf_dst[0] = inst_subu | inst_addu | inst_or | inst_sll | inst_slt | inst_sltu | 
                            inst_xor | inst_add | inst_sub | inst_and | inst_sllv | inst_sra | 
-                           inst_srav | inst_srl | inst_srlv | inst_nor;
+                           inst_srav | inst_srl | inst_srlv | inst_nor | inst_jalr;
     // store in [rt] 
     assign sel_rf_dst[1] = inst_ori | inst_lui | inst_addiu | inst_lw | inst_slti | inst_sltiu | 
                            inst_andi | inst_xori | inst_addi;
     // store in [31]
-    assign sel_rf_dst[2] = inst_jal;
+    assign sel_rf_dst[2] = inst_jal | inst_bltzal | inst_bgezal;
 
     // sel for regfile address
     assign rf_waddr = {5{sel_rf_dst[0]}} & rd 
@@ -313,7 +319,8 @@ module ID(
     assign rs_leq_ze = (rdata1[31] == 1'b1 || rdata1 == 0); // rs<=0
     assign rs_lt_ze = (rdata1[31] == 1'b1); //rs<0
     assign br_e = (inst_beq & rs_eq_rt) | (inst_bne & ~rs_eq_rt) | (inst_bgez & rs_geq_ze) | inst_jal
-                  | inst_jr | inst_j | (inst_bgtz & rs_gt_ze) | (inst_blez & rs_leq_ze) | (inst_bltz & rs_lt_ze);
+                  | inst_jr | inst_j | (inst_bgtz & rs_gt_ze) | (inst_blez & rs_leq_ze) | (inst_bltz & rs_lt_ze)
+                  | (inst_bltzal & rs_lt_ze) | (inst_bgezal & rs_geq_ze) | inst_jalr;
     assign br_addr = (inst_beq ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
                       inst_bne ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) :
                       inst_jal | inst_j ? ({pc_plus_4[31:28],instr_index,2'b0}) : 
@@ -321,7 +328,11 @@ module ID(
                       inst_bgez ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) :
                       inst_bgtz ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
                       inst_blez ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
-                      inst_bltz ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 32'b0);
+                      inst_bltz ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) : 
+                      inst_bltzal ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) :
+                      inst_bgezal ? (pc_plus_4 + {{14{inst[15]}},inst[15:0],2'b0}) :
+                      inst_jalr ? rdata1:
+                      32'b0);
 
     assign br_bus = {
         br_e,

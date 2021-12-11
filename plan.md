@@ -279,3 +279,19 @@ blez rs<=0 (rdata1[31] == 1'b0 || rdata1 == 0)
 bltz rs<0 (rdata1[31] == 1'b1)
 四条分支指令添加后,测试点到达40
 
+bltzal rs<0
+bgezal rs>=0
+jalr 无条件跳转
+三条指令都需要将下下条的指令pc值存入31号寄存器, 选择add操作,pc作为src1,8作为src2再ex段计算即可.
+
+测试点到达43:
+
+```
+----[ 983765 ns] Number 8'd43 Functional Test Point PASS!!!
+--------------------------------------------------------------
+[ 984137 ns] Error!!!
+    reference: PC = 0xbfc7d7dc, wb_rf_wnum = 0x15, wb_rf_wdata = 0x00000002
+    mycpu    : PC = 0xbfc7d7e4, wb_rf_wnum = 0x02, wb_rf_wdata = 0x00000002
+--------------------------------------------------------------
+```
+下一条需要添加的指令是mflo
