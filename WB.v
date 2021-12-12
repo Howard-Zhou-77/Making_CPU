@@ -7,7 +7,10 @@ module WB(
 
     input wire [`MEM_TO_WB_WD-1:0] mem_to_wb_bus,
 
+    input wire [1:0] hilo_mem_to_wb_bus,
+
     output wire [`WB_TO_RF_WD-1:0] wb_to_rf_bus,
+    output wire [1:0] hilo_wb_to_rf_bus,
 
     output wire [31:0] debug_wb_pc,
     output wire [3:0] debug_wb_rf_wen,
@@ -15,23 +18,29 @@ module WB(
     output wire [31:0] debug_wb_rf_wdata,
     output wire wb_wreg,
     output wire [4:0] wb_waddr,
-    output wire [31:0] wb_wdata
+    output wire [31:0] wb_wdata,
+    output wire wb_hi_we,
+    output wire wb_lo_we
 );
 
     reg [`MEM_TO_WB_WD-1:0] mem_to_wb_bus_r;
+    reg [1:0] hilo_mem_to_wb_bus_r;
 
     always @ (posedge clk) begin
         if (rst) begin
             mem_to_wb_bus_r <= `MEM_TO_WB_WD'b0;
+            hilo_mem_to_wb_bus_r <= 2'b0;
         end
         // else if (flush) begin
         //     mem_to_wb_bus_r <= `MEM_TO_WB_WD'b0;
         // end
         else if (stall[4]==`Stop && stall[5]==`NoStop) begin
             mem_to_wb_bus_r <= `MEM_TO_WB_WD'b0;
+            hilo_mem_to_wb_bus_r <= 2'b0;
         end
         else if (stall[4]==`NoStop) begin
             mem_to_wb_bus_r <= mem_to_wb_bus;
+            hilo_mem_to_wb_bus_r <= hilo_mem_to_wb_bus;
         end
     end
 
@@ -54,6 +63,8 @@ module WB(
         rf_wdata
     };
 
+    assign hilo_wb_to_rf_bus = hilo_mem_to_wb_bus_r;
+
     assign debug_wb_pc = wb_pc;
     assign debug_wb_rf_wen = {4{rf_we}};
     assign debug_wb_rf_wnum = rf_waddr;
@@ -62,5 +73,10 @@ module WB(
     assign wb_wreg = rf_we;
     assign wb_waddr = rf_waddr;
     assign wb_wdata = rf_wdata;
+
+    assign {
+        wb_hi_we,
+        wb_lo_we
+    } = hilo_mem_to_wb_bus_r;
     
 endmodule

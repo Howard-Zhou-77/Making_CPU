@@ -29,16 +29,26 @@ module mycpu_core(
     wire [`DATA_SRAM_WD-1:0] ex_dt_sram_bus;
     wire [`WB_TO_RF_WD-1:0] wb_to_rf_bus;
     wire [`StallBus-1:0] stall;
+    wire [67:0] hilo_id_to_ex_bus;
+    wire [1:0] hilo_ex_to_mem_bus;
+    wire [1:0] hilo_mem_to_wb_bus;
+    wire [1:0] hilo_wb_to_rf_bus;
     wire ex_to_id_reg;
     wire [4:0] ex_to_id_add;
     wire [31:0] ex_to_id_data;
     wire ex_opl;
+    wire ex_hi_we;
+    wire ex_lo_we;
     wire mem_to_id_reg;
     wire [4:0] mem_to_id_add;
     wire [31:0] mem_to_id_data;
+    wire mem_hi_we;
+    wire mem_lo_we;
     wire wb_to_id_reg;
     wire [4:0] wb_to_id_add;
     wire [31:0] wb_to_id_data;
+    wire wb_hi_we;
+    wire wb_lo_we;
 
     IF u_IF(
     	.clk             (clk             ),
@@ -61,18 +71,26 @@ module mycpu_core(
         .if_to_id_bus    (if_to_id_bus    ),
         .inst_sram_rdata (inst_sram_rdata ),
         .wb_to_rf_bus    (wb_to_rf_bus    ),
+        .hilo_wb_to_rf_bus (hilo_wb_to_rf_bus),
         .id_to_ex_bus    (id_to_ex_bus    ),
+        .hilo_id_to_ex_bus (hilo_id_to_ex_bus),
         .br_bus          (br_bus          ),
         .ex_wreg         (ex_to_id_reg    ),
         .ex_waddr        (ex_to_id_add    ),
         .ex_wdata        (ex_to_id_data   ),
         .ex_opl          (ex_opl          ),
+        .ex_hi_we        (ex_hi_we        ),
+        .ex_lo_we        (ex_lo_we        ),
         .mem_wreg        (mem_to_id_reg   ),
         .mem_waddr       (mem_to_id_add   ),
         .mem_wdata       (mem_to_id_data  ),
+        .mem_hi_we       (mem_hi_we       ),
+        .mem_lo_we       (mem_lo_we       ),
         .wb_wreg         (wb_to_id_reg    ),
         .wb_waddr        (wb_to_id_add    ),
-        .wb_wdata        (wb_to_id_data   )
+        .wb_wdata        (wb_to_id_data   ),
+        .wb_hi_we        (wb_hi_we        ),
+        .wb_lo_we        (wb_lo_we        )
     );
 
     EX u_EX(
@@ -81,6 +99,8 @@ module mycpu_core(
         .stall           (stall           ),
         .id_to_ex_bus    (id_to_ex_bus    ),
         .ex_to_mem_bus   (ex_to_mem_bus   ),
+        .hilo_id_to_ex_bus (hilo_id_to_ex_bus),
+        .hilo_ex_to_mem_bus (hilo_ex_to_mem_bus),
         .data_sram_en    (data_sram_en    ),
         .data_sram_wen   (data_sram_wen   ),
         .data_sram_addr  (data_sram_addr  ),
@@ -88,7 +108,9 @@ module mycpu_core(
         .ex_wreg         (ex_to_id_reg    ),
         .ex_waddr        (ex_to_id_add    ),
         .ex_wdata        (ex_to_id_data   ),
-        .ex_opl          (ex_opl          )
+        .ex_opl          (ex_opl          ),
+        .ex_hi_we        (ex_hi_we        ),
+        .ex_lo_we        (ex_lo_we        )
     );
 
     MEM u_MEM(
@@ -96,11 +118,15 @@ module mycpu_core(
         .rst             (rst             ),
         .stall           (stall           ),
         .ex_to_mem_bus   (ex_to_mem_bus   ),
+        .hilo_ex_to_mem_bus (hilo_ex_to_mem_bus),
         .data_sram_rdata (data_sram_rdata ),
         .mem_to_wb_bus   (mem_to_wb_bus   ),
+        .hilo_mem_to_wb_bus (hilo_mem_to_wb_bus),
         .mem_wreg        (mem_to_id_reg   ),
         .mem_waddr       (mem_to_id_add   ),
-        .mem_wdata       (mem_to_id_data  )
+        .mem_wdata       (mem_to_id_data  ),
+        .mem_hi_we       (mem_hi_we       ),
+        .mem_lo_we       (mem_lo_we       )
     );
     
     WB u_WB(
@@ -108,14 +134,18 @@ module mycpu_core(
         .rst               (rst               ),
         .stall             (stall             ),
         .mem_to_wb_bus     (mem_to_wb_bus     ),
+        .hilo_mem_to_wb_bus (hilo_mem_to_wb_bus),
         .wb_to_rf_bus      (wb_to_rf_bus      ),
+        .hilo_wb_to_rf_bus (hilo_wb_to_rf_bus ),
         .debug_wb_pc       (debug_wb_pc       ),
         .debug_wb_rf_wen   (debug_wb_rf_wen   ),
         .debug_wb_rf_wnum  (debug_wb_rf_wnum  ),
         .debug_wb_rf_wdata (debug_wb_rf_wdata ),
         .wb_wreg           (wb_to_id_reg      ),
         .wb_waddr          (wb_to_id_add      ),
-        .wb_wdata          (wb_to_id_data     )
+        .wb_wdata          (wb_to_id_data     ),
+        .wb_hi_we        (wb_hi_we        ),
+        .wb_lo_we        (wb_lo_we        )
     );
 
     CTRL u_CTRL(

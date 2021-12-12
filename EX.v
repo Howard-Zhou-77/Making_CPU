@@ -7,7 +7,10 @@ module EX(
 
     input wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,
 
+    input wire [67:0] hilo_id_to_ex_bus,
+
     output wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,
+    output wire [1:0] hilo_ex_to_mem_bus,
 
     output wire data_sram_en,
     output wire [3:0] data_sram_wen,
@@ -17,23 +20,29 @@ module EX(
     output wire ex_wreg,
     output wire [4:0] ex_waddr,
     output wire [31:0] ex_wdata,
-    output wire ex_opl
+    output wire ex_opl,
+    output wire ex_hi_we,
+    output wire ex_lo_we
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
+    reg [67:0] hilo_id_to_ex_bus_r;
 
     always @ (posedge clk) begin
         if (rst) begin
             id_to_ex_bus_r <= `ID_TO_EX_WD'b0;
+            hilo_id_to_ex_bus_r <= 68'b0;
         end
         // else if (flush) begin
         //     id_to_ex_bus_r <= `ID_TO_EX_WD'b0;
         // end
         else if (stall[2]==`Stop && stall[3]==`NoStop) begin
             id_to_ex_bus_r <= `ID_TO_EX_WD'b0;
+            hilo_id_to_ex_bus_r <= 68'b0;
         end
         else if (stall[2]==`NoStop) begin
             id_to_ex_bus_r <= id_to_ex_bus;
+            hilo_id_to_ex_bus_r <= hilo_id_to_ex_bus;
         end
     end
 
@@ -49,6 +58,12 @@ module EX(
     wire [31:0] rf_rdata1, rf_rdata2;
     reg is_in_delayslot;
 
+    wire [31:0] hi_rdata, lo_rdata;
+    wire hi_rf_we;
+    wire lo_rf_we;
+    wire hi_e;
+    wire lo_e;
+
     assign {
         ex_pc,          // 148:117
         inst,           // 116:85
@@ -63,6 +78,15 @@ module EX(
         rf_rdata1,         // 63:32
         rf_rdata2          // 31:0
     } = id_to_ex_bus_r;
+
+    assign {
+        hi_rdata,            // 67:36
+        lo_rdata,            // 35:4
+        hi_rf_we,               // 3 
+        lo_rf_we,               // 2
+        hi_e,                // 1
+        lo_e                 // 0
+    } = hilo_id_to_ex_bus_r;
 
     wire [31:0] imm_sign_extend, imm_zero_extend, sa_zero_extend;
     assign imm_sign_extend = {{16{inst[15]}},inst[15:0]};
@@ -86,7 +110,11 @@ module EX(
         .alu_result  (alu_result  )
     );
 
-    assign ex_result = alu_result;
+    assign ex_result = hi_rf_we ? rf_rdata1 :
+                       lo_rf_we ? rf_rdata1 :
+                       hi_e ? hi_rdata :
+                       lo_e ? lo_rdata :
+                       alu_result;
 
     assign ex_opl = inst[31:26]==6'b10_0011 ? 1 : 0;
 
@@ -94,7 +122,7 @@ module EX(
     
     assign data_sram_wen = data_ram_wen; //mem wen
 
-    assign data_sram_addr = ex_result ; //
+    assign data_sram_addr = alu_result ; //
 
     assign data_sram_wdata = rf_rdata2; //store data
 
@@ -106,6 +134,11 @@ module EX(
         rf_we,          // 37
         rf_waddr,       // 36:32
         ex_result       // 31:0
+    };
+
+    assign hilo_ex_to_mem_bus ={
+        hi_rf_we,               // 1 
+        lo_rf_we                // 0
     };
 
     // MUL part
@@ -216,6 +249,7 @@ module EX(
     assign ex_wreg=rf_we;
     assign ex_waddr=rf_waddr;
     assign ex_wdata=ex_result;
-    
+    assign ex_hi_we=hi_rf_we;
+    assign ex_lo_we=lo_rf_we;
     
 endmodule

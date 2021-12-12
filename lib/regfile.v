@@ -6,9 +6,7 @@ module regfile(
     input wire [4:0] raddr2,
     output wire [31:0] rdata2,
     
-    input wire hi_e,
     output wire [31:0] hi_rdata,
-    input wire lo_e,
     output wire [31:0] lo_rdata,
 
     input wire we,
@@ -66,13 +64,11 @@ module regfile(
                     (mem_wreg == 1'b1 && mem_waddr==raddr2) ? mem_wdata :
                     (wb_wreg == 1'b1 && wb_waddr==raddr2) ? wb_wdata: reg_array[raddr2];
     // read hi
-    assign hi_rdata = (hi_e == 0) ? 32'b0 :
-                    (ex_hi_we == 1'b1) ? ex_wdata :
+    assign hi_rdata = (ex_hi_we == 1'b1) ? ex_wdata :
                     (mem_hi_we == 1'b1) ? mem_wdata : 
                     (wb_hi_we == 1'b1) ? wb_wdata : hi_reg;
     // read lo
-    assign lo_rdata = (lo_e == 0) ? 32'b0 :
-                    (ex_lo_we == 1'b1) ? ex_wdata :
+    assign lo_rdata = (ex_lo_we == 1'b1) ? ex_wdata :
                     (mem_lo_we == 1'b1) ? mem_wdata : 
                     (wb_lo_we == 1'b1) ? wb_wdata : lo_reg;
 endmodule
