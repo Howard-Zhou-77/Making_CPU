@@ -6,20 +6,22 @@ module MEM(
     input wire [`StallBus-1:0] stall,
 
     input wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,
-    input wire [1:0] hilo_ex_to_mem_bus,
+    input wire [65:0] hilo_ex_to_mem_bus,
     input wire [31:0] data_sram_rdata,
 
     output wire [`MEM_TO_WB_WD-1:0] mem_to_wb_bus,
-    output wire [1:0] hilo_mem_to_wb_bus,
+    output wire [65:0] hilo_mem_to_wb_bus,
     output wire mem_wreg,
     output wire [4:0] mem_waddr,
     output wire [31:0] mem_wdata,
     output wire mem_hi_we,
-    output wire mem_lo_we
+    output wire mem_lo_we,
+    output wire [31:0] mem_hi_wdata,
+    output wire [31:0] mem_lo_wdata
 );
 
     reg [`EX_TO_MEM_WD-1:0] ex_to_mem_bus_r;
-    reg [1:0] hilo_ex_to_mem_bus_r;
+    reg [65:0] hilo_ex_to_mem_bus_r;
 
     always @ (posedge clk) begin
         if (rst) begin
@@ -81,6 +83,8 @@ module MEM(
     assign mem_waddr = rf_waddr;
     assign mem_wdata = rf_wdata;
     assign {
+        mem_hi_wdata,
+        mem_lo_wdata,
         mem_hi_we,
         mem_lo_we
     } = hilo_ex_to_mem_bus_r;

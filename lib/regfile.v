@@ -14,6 +14,8 @@ module regfile(
     input wire lo_we,
     input wire [4:0] waddr,
     input wire [31:0] wdata, 
+    input wire [31:0] hi_wdata,
+    input wire [31:0] lo_wdata,
     
 
     input wire ex_wreg,
@@ -21,6 +23,8 @@ module regfile(
     input wire ex_lo_we,
     input wire [4:0] ex_waddr,
     input wire [31:0] ex_wdata,
+    input wire [31:0] ex_hi_wdata,
+    input wire [31:0] ex_lo_wdata,
 
     
     input wire mem_wreg,
@@ -28,12 +32,16 @@ module regfile(
     input wire mem_lo_we,
     input wire [4:0] mem_waddr,
     input wire [31:0] mem_wdata,
+    input wire [31:0] mem_hi_wdata,
+    input wire [31:0] mem_lo_wdata,
 
     input wire wb_wreg,
     input wire wb_hi_we,
     input wire wb_lo_we,
     input wire [4:0] wb_waddr,
-    input wire [31:0] wb_wdata 
+    input wire [31:0] wb_wdata,
+    input wire [31:0] wb_hi_wdata,
+    input wire [31:0] wb_lo_wdata 
 );
     reg [31:0] reg_array [31:0];
     reg [31:0] hi_reg;
@@ -45,10 +53,10 @@ module regfile(
             reg_array[waddr] <= wdata;
         end
         if (hi_we) begin
-            hi_reg <= wdata;
+            hi_reg <= hi_wdata;
         end
         if (lo_we) begin
-            lo_reg <= wdata;
+            lo_reg <= lo_wdata;
         end
     end
 
@@ -64,11 +72,11 @@ module regfile(
                     (mem_wreg == 1'b1 && mem_waddr==raddr2) ? mem_wdata :
                     (wb_wreg == 1'b1 && wb_waddr==raddr2) ? wb_wdata: reg_array[raddr2];
     // read hi
-    assign hi_rdata = (ex_hi_we == 1'b1) ? ex_wdata :
-                    (mem_hi_we == 1'b1) ? mem_wdata : 
-                    (wb_hi_we == 1'b1) ? wb_wdata : hi_reg;
+    assign hi_rdata = (ex_hi_we == 1'b1) ? ex_hi_wdata :
+                    (mem_hi_we == 1'b1) ? mem_hi_wdata : 
+                    (wb_hi_we == 1'b1) ? wb_hi_wdata : hi_reg;
     // read lo
-    assign lo_rdata = (ex_lo_we == 1'b1) ? ex_wdata :
-                    (mem_lo_we == 1'b1) ? mem_wdata : 
-                    (wb_lo_we == 1'b1) ? wb_wdata : lo_reg;
+    assign lo_rdata = (ex_lo_we == 1'b1) ? ex_lo_wdata :
+                    (mem_lo_we == 1'b1) ? mem_lo_wdata : 
+                    (wb_lo_we == 1'b1) ? wb_lo_wdata : lo_reg;
 endmodule

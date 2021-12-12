@@ -7,10 +7,10 @@ module EX(
 
     input wire [`ID_TO_EX_WD-1:0] id_to_ex_bus,
 
-    input wire [67:0] hilo_id_to_ex_bus,
+    input wire [71:0] hilo_id_to_ex_bus,
 
     output wire [`EX_TO_MEM_WD-1:0] ex_to_mem_bus,
-    output wire [1:0] hilo_ex_to_mem_bus,
+    output wire [65:0] hilo_ex_to_mem_bus,
 
     output wire data_sram_en,
     output wire [3:0] data_sram_wen,
@@ -22,11 +22,13 @@ module EX(
     output wire [31:0] ex_wdata,
     output wire ex_opl,
     output wire ex_hi_we,
-    output wire ex_lo_we
+    output wire ex_lo_we,
+    output wire [31:0] ex_hi_wdata,
+    output wire [31:0] ex_lo_wdata
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
-    reg [67:0] hilo_id_to_ex_bus_r;
+    reg [71:0] hilo_id_to_ex_bus_r;
 
     always @ (posedge clk) begin
         if (rst) begin
@@ -58,11 +60,14 @@ module EX(
     wire [31:0] rf_rdata1, rf_rdata2;
     reg is_in_delayslot;
 
+    wire [3:0] hilo_inst;
     wire [31:0] hi_rdata, lo_rdata;
     wire hi_rf_we;
     wire lo_rf_we;
     wire hi_e;
     wire lo_e;
+    wire [31:0] hi_rf_wdata;
+    wire [31:0] lo_rf_wdata;
 
     assign {
         ex_pc,          // 148:117
@@ -80,6 +85,7 @@ module EX(
     } = id_to_ex_bus_r;
 
     assign {
+        hilo_inst,           // 71:68
         hi_rdata,            // 67:36
         lo_rdata,            // 35:4
         hi_rf_we,               // 3 
@@ -95,6 +101,7 @@ module EX(
 
     wire [31:0] alu_src1, alu_src2;
     wire [31:0] alu_result, ex_result;
+    wire inst_mfhi, inst_mflo, inst_mthi, inst_mtlo, inst_mult;
 
     assign alu_src1 = sel_alu_src1[1] ? ex_pc :
                       sel_alu_src1[2] ? sa_zero_extend : rf_rdata1;
@@ -102,7 +109,13 @@ module EX(
     assign alu_src2 = sel_alu_src2[1] ? imm_sign_extend :
                       sel_alu_src2[2] ? 32'd8 : // bgtzal...
                       sel_alu_src2[3] ? imm_zero_extend : rf_rdata2;
-    
+
+    assign inst_mflo = hilo_inst == 4'b0001 ? 1 : 0;
+    assign inst_mfhi = hilo_inst == 4'b0010 ? 1 : 0;
+    assign inst_mtlo = hilo_inst == 4'b0011 ? 1 : 0;
+    assign inst_mthi = hilo_inst == 4'b0100 ? 1 : 0;
+    assign inst_mult = hilo_inst == 4'b0101 ? 1 : 0;
+
     alu u_alu(
     	.alu_control (alu_op ),
         .alu_src1    (alu_src1    ),
@@ -110,11 +123,9 @@ module EX(
         .alu_result  (alu_result  )
     );
 
-    assign ex_result = hi_rf_we ? rf_rdata1 :
-                       lo_rf_we ? rf_rdata1 :
-                       hi_e ? hi_rdata :
-                       lo_e ? lo_rdata :
-                       alu_result;
+    assign ex_result = inst_mfhi ? hi_rdata : 
+                       inst_mflo ? lo_rdata :
+                       alu_result ;
 
     assign ex_opl = inst[31:26]==6'b10_0011 ? 1 : 0;
 
@@ -136,10 +147,6 @@ module EX(
         ex_result       // 31:0
     };
 
-    assign hilo_ex_to_mem_bus ={
-        hi_rf_we,               // 1 
-        lo_rf_we                // 0
-    };
 
     // MUL part
     wire [63:0] mul_result;
@@ -148,9 +155,9 @@ module EX(
     mul u_mul(
     	.clk        (clk            ),
         .resetn     (~rst           ),
-        .mul_signed (mul_signed     ),
-        .ina        (      ), // 乘法源操作数1
-        .inb        (      ), // 乘法源操作数2
+        .mul_signed (inst_mult      ),
+        .ina        (rf_rdata1      ), // 乘法源操作数1
+        .inb        (rf_rdata2      ), // 乘法源操作数2
         .result     (mul_result     ) // 乘法结果 64bit
     );
 
@@ -245,11 +252,25 @@ module EX(
         end
     end
 
+    assign hi_rf_wdata = inst_mthi ? rf_rdata1 :
+                         inst_mult ? mul_result[63:32] : 32'b0;
+    assign lo_rf_wdata = inst_mtlo ? rf_rdata1 : 
+                         inst_mult ? mul_result[31:0] : 32'b0;
+
+    assign hilo_ex_to_mem_bus ={
+        hi_rf_wdata,            // 65:34
+        lo_rf_wdata,            // 33:2
+        hi_rf_we,               // 1 
+        lo_rf_we                // 0
+    };
+
     // mul_result �? div_result 可以直接使用
     assign ex_wreg=rf_we;
     assign ex_waddr=rf_waddr;
     assign ex_wdata=ex_result;
     assign ex_hi_we=hi_rf_we;
     assign ex_lo_we=lo_rf_we;
+    assign ex_hi_wdata=hi_rf_wdata;
+    assign ex_lo_wdata=lo_rf_wdata;
     
 endmodule
