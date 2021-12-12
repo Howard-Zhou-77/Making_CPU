@@ -94,6 +94,18 @@ module ID(
     wire [2:0] sel_rf_dst;
 
     wire [31:0] rdata1, rdata2;
+    wire [31:0] hi_rdata, lo_rdata;
+    wire wb_rf_hi_we=1'b0;
+    wire wb_rf_lo_we=1'b0;
+    wire hi_e=1'b0;
+    wire lo_e=1'b0;
+
+    wire ex_hi_we=1'b0;
+    wire ex_lo_we=1'b0;
+    wire mem_hi_we=1'b0;
+    wire mem_lo_we=1'b0;
+    wire wb_hi_we=1'b0;
+    wire wb_lo_we=1'b0;
 
     regfile u_regfile(
     	.clk    (clk    ),
@@ -101,18 +113,33 @@ module ID(
         .rdata1 (rdata1 ),
         .raddr2 (rt ),
         .rdata2 (rdata2 ),
+
+        .hi_e (hi_e ),
+        .hi_rdata (hi_rdata ),
+        .lo_e (lo_e ),
+        .lo_rdata (lo_rdata ),
+
         .we     (wb_rf_we     ),
+        .hi_we  (wb_rf_hi_we  ),
+        .lo_we  (wb_rf_lo_we  ),
         .waddr  (wb_rf_waddr  ),
         .wdata  (wb_rf_wdata  ),
+
         .ex_wreg    (ex_wreg  ),
+        .ex_hi_we   (ex_hi_we ),
+        .ex_lo_we   (ex_lo_we ),
         .ex_waddr   (ex_waddr ),
         .ex_wdata   (ex_wdata ),
         
         .mem_wreg    (mem_wreg  ),
+        .mem_hi_we   (mem_hi_we ),
+        .mem_lo_we   (mem_lo_we ),
         .mem_waddr   (mem_waddr ),
         .mem_wdata   (mem_wdata ),
 
         .wb_wreg    (wb_wreg  ),
+        .wb_hi_we   (wb_hi_we ),
+        .wb_lo_we   (wb_lo_we ),
         .wb_waddr   (wb_waddr ),
         .wb_wdata   (wb_wdata )
     );
@@ -132,7 +159,8 @@ module ID(
 
     wire inst_ori, inst_lui, inst_addiu, inst_beq, inst_bne, inst_sll, inst_sw, inst_lw, inst_slt, 
          inst_slti, inst_sltiu, inst_sltu, inst_xor, inst_j, inst_sra, inst_srav, inst_srl, inst_srlv,
-         insr_nor, inst_bgez, inst_bgtz, inst_blez, inst_bltz, inst_bltzal, inst_bgezal, inst_jalr;
+         inst_nor, inst_bgez, inst_bgtz, inst_blez, inst_bltz, inst_bltzal, inst_bgezal, inst_jalr,
+         inst_mflo;
 
     wire op_add, op_sub, op_slt, op_sltu;
     wire op_and, op_nor, op_or, op_xor;
@@ -197,6 +225,7 @@ module ID(
     assign inst_bltzal  = op_d[6'b00_0001] & rt_d[5'b10_000]; //rt 10000
     assign inst_bgezal  = op_d[6'b00_0001] & rt_d[5'b10_001]; //rt 10001
     assign inst_jalr    = op_d[6'b00_0000] & func_d[6'b00_1001];
+    assign inst_mflo    = op_d[6'b00_0000] & func_d[6'b01_0010];
     // rs to reg1
     assign sel_alu_src1[0] = inst_ori | inst_addiu | inst_subu | inst_jr | inst_lw | inst_addu | 
                              inst_or | inst_sw | inst_bne | inst_slt | inst_slti | inst_sltiu | 
