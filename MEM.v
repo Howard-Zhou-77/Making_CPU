@@ -65,10 +65,11 @@ module MEM(
     assign hilo_mem_to_wb_bus = hilo_ex_to_mem_bus_r;
 
     // TODO:实现读内存的代码
-    wire inst_lw;
-    assign inst_lw  = data_ram_wen == 4'b0000 ? 1:0;
-
-    assign mem_result =  data_sram_rdata;
+    wire inst_lw,inst_lb;
+    assign inst_lw  = data_ram_wen == 4'b0000 ? 1 : 0;
+    assign inst_lb  = data_ram_wen == 4'b0111 ? 1 : 0;
+    assign mem_result =  inst_lw ? data_sram_rdata:
+                         inst_lb ? {{24{data_sram_rdata[31]}}, data_sram_rdata[31:24]} : 0;
 
     assign rf_wdata = sel_rf_res ? mem_result : ex_result;
 
