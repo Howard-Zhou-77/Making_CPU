@@ -308,3 +308,12 @@ jalr 无条件跳转
 添加了mflo mfhi mtlo mthi 四条指令。
 
 乘除指令会同时写hi lo两个寄存器需要进行修改
+
+添加了乘除指令,并对原先的部分错误进行了修改
+```
+----[1253335 ns] Number 8'd58 Functional Test Point PASS!!!
+--------------------------------------------------------------
+[1253747 ns] Error!!!
+    reference: PC = 0xbfc371a0, wb_rf_wnum = 0x02, wb_rf_wdata = 0x0000000b
+    mycpu    : PC = 0xbfc371a4, wb_rf_wnum = 0x05, wb_rf_wdata = 0x800d6764
+```

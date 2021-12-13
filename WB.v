@@ -31,14 +31,14 @@ module WB(
     always @ (posedge clk) begin
         if (rst) begin
             mem_to_wb_bus_r <= `MEM_TO_WB_WD'b0;
-            hilo_mem_to_wb_bus_r <= 2'b0;
+            hilo_mem_to_wb_bus_r <= 66'b0;
         end
         // else if (flush) begin
         //     mem_to_wb_bus_r <= `MEM_TO_WB_WD'b0;
         // end
         else if (stall[4]==`Stop && stall[5]==`NoStop) begin
             mem_to_wb_bus_r <= `MEM_TO_WB_WD'b0;
-            hilo_mem_to_wb_bus_r <= 2'b0;
+            hilo_mem_to_wb_bus_r <= 66'b0;
         end
         else if (stall[4]==`NoStop) begin
             mem_to_wb_bus_r <= mem_to_wb_bus;

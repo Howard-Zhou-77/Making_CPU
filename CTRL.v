@@ -1,7 +1,7 @@
 `include "lib/defines.vh"
 module CTRL(
     input wire rst,
-    // input wire stallreq_for_ex,
+    input wire stallreq_for_ex,
     input wire stallreq_for_load,
 
     // output reg flush,
@@ -14,6 +14,9 @@ module CTRL(
         end
         else if(stallreq_for_load==1) begin
             stall = 5'b00111;
+        end
+        else if(stallreq_for_ex==1) begin
+            stall = 5'b11111;
         end
         else begin
             stall = `StallBus'b0;

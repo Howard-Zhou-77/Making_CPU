@@ -24,7 +24,8 @@ module EX(
     output wire ex_hi_we,
     output wire ex_lo_we,
     output wire [31:0] ex_hi_wdata,
-    output wire [31:0] ex_lo_wdata
+    output wire [31:0] ex_lo_wdata,
+    output wire stallreq_for_ex
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
@@ -33,14 +34,14 @@ module EX(
     always @ (posedge clk) begin
         if (rst) begin
             id_to_ex_bus_r <= `ID_TO_EX_WD'b0;
-            hilo_id_to_ex_bus_r <= 68'b0;
+            hilo_id_to_ex_bus_r <= 72'b0;
         end
         // else if (flush) begin
         //     id_to_ex_bus_r <= `ID_TO_EX_WD'b0;
         // end
         else if (stall[2]==`Stop && stall[3]==`NoStop) begin
             id_to_ex_bus_r <= `ID_TO_EX_WD'b0;
-            hilo_id_to_ex_bus_r <= 68'b0;
+            hilo_id_to_ex_bus_r <= 72'b0;
         end
         else if (stall[2]==`NoStop) begin
             id_to_ex_bus_r <= id_to_ex_bus;
@@ -101,7 +102,7 @@ module EX(
 
     wire [31:0] alu_src1, alu_src2;
     wire [31:0] alu_result, ex_result;
-    wire inst_mfhi, inst_mflo, inst_mthi, inst_mtlo, inst_mult;
+    wire inst_mfhi, inst_mflo, inst_mthi, inst_mtlo, inst_mult, inst_multu;
 
     assign alu_src1 = sel_alu_src1[1] ? ex_pc :
                       sel_alu_src1[2] ? sa_zero_extend : rf_rdata1;
@@ -115,6 +116,7 @@ module EX(
     assign inst_mtlo = hilo_inst == 4'b0011 ? 1 : 0;
     assign inst_mthi = hilo_inst == 4'b0100 ? 1 : 0;
     assign inst_mult = hilo_inst == 4'b0101 ? 1 : 0;
+    assign inst_multu = hilo_inst == 4'b0110 ? 1 : 0;
 
     alu u_alu(
     	.alu_control (alu_op ),
@@ -127,7 +129,7 @@ module EX(
                        inst_mflo ? lo_rdata :
                        alu_result ;
 
-    assign ex_opl = (inst[31:26]==6'b10_0011 | inst[31:26]==6'b10_0000) ? 1 : 0;
+    assign ex_opl = inst[31:26]==6'b10_0011 ? 1 : 0;
 
     assign data_sram_en = data_ram_en;
     
@@ -164,9 +166,15 @@ module EX(
     // DIV part
     wire [63:0] div_result;
     wire inst_div, inst_divu;
+
+    assign inst_div = hilo_inst == 4'b0111 ? 1 : 0;
+    assign inst_divu = hilo_inst == 4'b1000 ? 1 : 0;
+
     wire div_ready_i;
     reg stallreq_for_div;
+
     assign stallreq_for_ex = stallreq_for_div;
+    
 
     reg [31:0] div_opdata1_o;
     reg [31:0] div_opdata2_o;
@@ -253,9 +261,11 @@ module EX(
     end
 
     assign hi_rf_wdata = inst_mthi ? rf_rdata1 :
-                         inst_mult ? mul_result[63:32] : 32'b0;
+                         inst_mult | inst_multu ? mul_result[63:32] :
+                         inst_div | inst_divu ? div_result[63:32] : 32'b0;
     assign lo_rf_wdata = inst_mtlo ? rf_rdata1 : 
-                         inst_mult ? mul_result[31:0] : 32'b0;
+                         inst_mult | inst_multu ? mul_result[31:0] : 
+                         inst_div | inst_divu ? div_result[31:0] : 32'b0;
 
     assign hilo_ex_to_mem_bus ={
         hi_rf_wdata,            // 65:34

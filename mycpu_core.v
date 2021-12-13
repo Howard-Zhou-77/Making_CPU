@@ -95,7 +95,7 @@ module mycpu_core(
         .mem_hi_we       (mem_hi_we       ),
         .mem_lo_we       (mem_lo_we       ),
         .mem_hi_wdata    (mem_hi_wdata    ),
-        .mem_lo_wdata    (mem_hi_wdata    ),
+        .mem_lo_wdata    (mem_lo_wdata    ),
         .wb_wreg         (wb_to_id_reg    ),
         .wb_waddr        (wb_to_id_add    ),
         .wb_wdata        (wb_to_id_data   ),
@@ -109,6 +109,7 @@ module mycpu_core(
     	.clk             (clk             ),
         .rst             (rst             ),
         .stall           (stall           ),
+        .stallreq_for_ex (stallreq_for_ex ),
         .id_to_ex_bus    (id_to_ex_bus    ),
         .ex_to_mem_bus   (ex_to_mem_bus   ),
         .hilo_id_to_ex_bus (hilo_id_to_ex_bus),
@@ -142,7 +143,7 @@ module mycpu_core(
         .mem_hi_we       (mem_hi_we       ),
         .mem_lo_we       (mem_lo_we       ),
         .mem_hi_wdata    (mem_hi_wdata    ),
-        .mem_lo_wdata    (mem_hi_wdata    )
+        .mem_lo_wdata    (mem_lo_wdata    )
     );
     
     WB u_WB(
@@ -169,7 +170,8 @@ module mycpu_core(
     CTRL u_CTRL(
     	.rst   (rst   ),
         .stall (stall ),
-        .stallreq_for_load (stallreq)
+        .stallreq_for_load (stallreq),
+        .stallreq_for_ex (stallreq_for_ex)
     );
     
 endmodule
