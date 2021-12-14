@@ -317,3 +317,9 @@ jalr 无条件跳转
     reference: PC = 0xbfc371a0, wb_rf_wnum = 0x02, wb_rf_wdata = 0x0000000b
     mycpu    : PC = 0xbfc371a4, wb_rf_wnum = 0x05, wb_rf_wdata = 0x800d6764
 ```
+
+
+添加了剩余load和store指令, 修改了一些错误, 完成了64个点的测试
+```
+----[1397715 ns] Number 8'd64 Functional Test Point PASS!!!
+```

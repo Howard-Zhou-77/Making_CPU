@@ -55,7 +55,6 @@ module mycpu_core(
     wire wb_lo_we;
     wire [31:0] wb_hi_wdata;
     wire [31:0] wb_lo_wdata;
-    wire data_sram_wu;
 
     IF u_IF(
     	.clk             (clk             ),
@@ -126,8 +125,7 @@ module mycpu_core(
         .ex_hi_we        (ex_hi_we        ),
         .ex_lo_we        (ex_lo_we        ),
         .ex_hi_wdata     (ex_hi_wdata     ),
-        .ex_lo_wdata     (ex_lo_wdata     ),
-        .data_sram_wu    (data_sram_wu    )
+        .ex_lo_wdata     (ex_lo_wdata     )
     );
 
     MEM u_MEM(
@@ -145,8 +143,7 @@ module mycpu_core(
         .mem_hi_we       (mem_hi_we       ),
         .mem_lo_we       (mem_lo_we       ),
         .mem_hi_wdata    (mem_hi_wdata    ),
-        .mem_lo_wdata    (mem_lo_wdata    ),
-        .data_sram_wu    (data_sram_wu    )
+        .mem_lo_wdata    (mem_lo_wdata    )
     );
     
     WB u_WB(
