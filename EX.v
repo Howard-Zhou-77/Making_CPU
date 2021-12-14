@@ -25,8 +25,7 @@ module EX(
     output wire ex_lo_we,
     output wire [31:0] ex_hi_wdata,
     output wire [31:0] ex_lo_wdata,
-    output wire stallreq_for_ex,
-    output wire data_sram_wu
+    output wire stallreq_for_ex
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
@@ -103,7 +102,8 @@ module EX(
 
     wire [31:0] alu_src1, alu_src2;
     wire [31:0] alu_result, ex_result;
-    wire inst_mfhi, inst_mflo, inst_mthi, inst_mtlo, inst_mult, inst_multu;
+
+    wire inst_mfhi, inst_mflo, inst_mthi, inst_mtlo, inst_mult, inst_multu, inst_sw, inst_sb, inst_sh;
 
     assign alu_src1 = sel_alu_src1[1] ? ex_pc :
                       sel_alu_src1[2] ? sa_zero_extend : rf_rdata1;
@@ -118,7 +118,11 @@ module EX(
     assign inst_mthi = hilo_inst == 4'b0100 ? 1 : 0;
     assign inst_mult = hilo_inst == 4'b0101 ? 1 : 0;
     assign inst_multu = hilo_inst == 4'b0110 ? 1 : 0;
-
+    assign inst_sw = data_ram_wen == 4'b1111 ? 1 : 0;
+    assign inst_sb = data_ram_wen == 4'b0001 ? 1 : 0;
+    assign inst_sh = data_ram_wen == 4'b0011 ? 1 : 0;
+    
+    
     alu u_alu(
     	.alu_control (alu_op ),
         .alu_src1    (alu_src1    ),
@@ -132,15 +136,25 @@ module EX(
 
     assign ex_opl = (inst[31:26]==6'b10_0011 | inst[31:26]==6'b10_0000 | inst[31:26]==6'b10_0100 
                     |inst[31:26]==6'b10_0001 | inst[31:26]==6'b10_0101) ? 1 : 0;
-    assign data_sram_wu = inst[31:26]==6'b10_0100 | inst[31:26]==6'b10_0101 ? 1 : 0;
 
     assign data_sram_en = data_ram_en;
     
-    assign data_sram_wen = data_ram_wen; //mem wen
+    assign data_sram_wen = (inst_sb & ex_result[1:0] == 2'b00) ? 4'b0001 :
+                           (inst_sb & ex_result[1:0] == 2'b01) ? 4'b0010 :
+                           (inst_sb & ex_result[1:0] == 2'b10) ? 4'b0100 :
+                           (inst_sb & ex_result[1:0] == 2'b11) ? 4'b1000 :
+                           (inst_sh & ex_result[1:0] == 2'b00) ? 4'b0011 :
+                           (inst_sh & ex_result[1:0] == 2'b10) ? 4'b1100 : 
+                           inst_sw ? 4'b1111 : 4'b0; //mem wen
 
     assign data_sram_addr = alu_result ; //
 
-    assign data_sram_wdata = rf_rdata2; //store data
+    assign data_sram_wdata = data_sram_wen == 4'b1000 ? {rf_rdata2[7:0], rf_rdata2[7:0], rf_rdata2[7:0], rf_rdata2[7:0]} :
+                             data_sram_wen == 4'b0100 ? {rf_rdata2[7:0], rf_rdata2[7:0], rf_rdata2[7:0], rf_rdata2[7:0]} : 
+                             data_sram_wen == 4'b0010 ? {rf_rdata2[7:0], rf_rdata2[7:0], rf_rdata2[7:0], rf_rdata2[7:0]} :
+                             data_sram_wen == 4'b0001 ? {rf_rdata2[7:0], rf_rdata2[7:0], rf_rdata2[7:0], rf_rdata2[7:0]} :
+                             data_sram_wen == 4'b1100 ? {rf_rdata2[15:0], rf_rdata2[15:0]} :
+                             data_sram_wen == 4'b0011 ? {rf_rdata2[15:0], rf_rdata2[15:0]} : rf_rdata2; //store data
 
     assign ex_to_mem_bus = {
         ex_pc,          // 75:44
