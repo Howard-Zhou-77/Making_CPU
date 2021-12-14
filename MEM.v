@@ -17,7 +17,8 @@ module MEM(
     output wire mem_hi_we,
     output wire mem_lo_we,
     output wire [31:0] mem_hi_wdata,
-    output wire [31:0] mem_lo_wdata
+    output wire [31:0] mem_lo_wdata,
+    input wire data_sram_wu
 );
 
     reg [`EX_TO_MEM_WD-1:0] ex_to_mem_bus_r;
@@ -65,10 +66,29 @@ module MEM(
     assign hilo_mem_to_wb_bus = hilo_ex_to_mem_bus_r;
 
     // TODO:实现读内存的代码
-    wire inst_lw;
+    wire inst_lw,inst_lb,inst_lh;
     assign inst_lw  = data_ram_wen == 4'b0000 ? 1:0;
+    assign inst_lb  = data_ram_wen == 4'b1110 ? 1:0;
+    assign inst_lh  = data_ram_wen == 4'b1100 ? 1:0;
+    assign data_sram_wen2 = (inst_lb & ex_result[1:0] == 2'b00) ? 4'b1000 :
+                            (inst_lb & ex_result[1:0] == 2'b01) ? 4'b0100 :
+                            (inst_lb & ex_result[1:0] == 2'b10) ? 4'b0010 :
+                            (inst_lb & ex_result[1:0] == 2'b11) ? 4'b0001 :
+                            (inst_lh & ex_result[1:0] == 2'b00) ? 4'b1100 :
+                            (inst_lh & ex_result[1:0] == 2'b10) ? 4'b0011 : 0;
 
-    assign mem_result =  data_sram_rdata;
+    assign mem_result =  inst_lw ? data_sram_rdata : data_sram_wen2 == 4'b1000 ?
+                         {(data_sram_wu ? 24'b0 :{24{data_sram_rdata[31]}}), data_sram_rdata[31:24]}:
+                         data_sram_wen2 == 4'b0100 ? {(data_sram_wu ? 24'b0 :
+                         {24{data_sram_rdata[23]}}), data_sram_rdata[23:16]}: 
+                         data_sram_wen2 == 4'b0010 ? {(data_sram_wu ? 24'b0 :
+                         {24{data_sram_rdata[15]}}), data_sram_rdata[15:8 ]}:
+                         data_sram_wen2 == 4'b0001 ? {(data_sram_wu ? 24'b0 :
+                         {24{data_sram_rdata[7 ]}}), data_sram_rdata[7 :0 ]}:
+                         data_sram_wen2 == 4'b1100 ? {(data_sram_wu ? 16'b0 :
+                         {16{data_sram_rdata[31]}}), data_sram_rdata[31:16]}:
+                         data_sram_wen2 == 4'b0011 ? {(data_sram_wu ? 16'b0 :
+                         {16{data_sram_rdata[15]}}), data_sram_rdata[15:0 ]}:0;
 
     assign rf_wdata = sel_rf_res ? mem_result : ex_result;
 

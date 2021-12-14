@@ -25,7 +25,8 @@ module EX(
     output wire ex_lo_we,
     output wire [31:0] ex_hi_wdata,
     output wire [31:0] ex_lo_wdata,
-    output wire stallreq_for_ex
+    output wire stallreq_for_ex,
+    output wire data_sram_wu
 );
 
     reg [`ID_TO_EX_WD-1:0] id_to_ex_bus_r;
@@ -129,7 +130,9 @@ module EX(
                        inst_mflo ? lo_rdata :
                        alu_result ;
 
-    assign ex_opl = inst[31:26]==6'b10_0011 ? 1 : 0;
+    assign ex_opl = (inst[31:26]==6'b10_0011 | inst[31:26]==6'b10_0000 | inst[31:26]==6'b10_0100 
+                    |inst[31:26]==6'b10_0001 | inst[31:26]==6'b10_0101) ? 1 : 0;
+    assign data_sram_wu = inst[31:26]==6'b10_0100 | inst[31:26]==6'b10_0101 ? 1 : 0;
 
     assign data_sram_en = data_ram_en;
     
