@@ -33,12 +33,12 @@ module mymul(
 					if (start_i == `MulStart && annul_i == 1'b0) begin
 						state <= `MulOn;					
 						cnt <= 6'b000000;
-						if(signed_mul_i == 1'b1 && opdata1_i[31] == 1'b1) begin			//被除数为负数
+						if(signed_mul_i == 1'b1 && opdata1_i[31] == 1'b1) begin			//操作数1为负数
 								temp_op1 = ~opdata1_i + 1;
 						end else begin
 								temp_op1 = opdata1_i;
 						end
-						if (signed_mul_i == 1'b1 && opdata2_i[31] == 1'b1 ) begin			//除数为负数
+						if (signed_mul_i == 1'b1 && opdata2_i[31] == 1'b1 ) begin			//操作数2为负数
 								temp_op2 = ~opdata2_i + 1;
 						end else begin
 								temp_op2 = opdata2_i;
