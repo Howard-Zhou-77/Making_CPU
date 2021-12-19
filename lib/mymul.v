@@ -59,7 +59,7 @@ module mymul(
 							cnt <= cnt +1;		//乘法运算次数
 						end	else begin
 							if ((signed_mul_i == 1'b1) && ((opdata1_i[31] ^ opdata2_i[31]) == 1'b1)) begin
-								mul_res = ~mul_res + 1;
+								mul_res <= ~mul_res + 1;
 							end
 							state <= `MulEnd;
 							cnt <= 6'b000000;

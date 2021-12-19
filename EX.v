@@ -118,6 +118,8 @@ module EX(
     assign inst_mthi = hilo_inst == 4'b0100 ? 1 : 0;
     assign inst_mult = hilo_inst == 4'b0101 ? 1 : 0;
     assign inst_multu = hilo_inst == 4'b0110 ? 1 : 0;
+    assign inst_div = hilo_inst == 4'b0111 ? 1 : 0;
+    assign inst_divu = hilo_inst == 4'b1000 ? 1 : 0;
     assign inst_sw = data_ram_wen == 4'b1111 ? 1 : 0;
     assign inst_sb = data_ram_wen == 4'b0001 ? 1 : 0;
     assign inst_sh = data_ram_wen == 4'b0011 ? 1 : 0;
@@ -167,195 +169,93 @@ module EX(
     };
 
 
-    // MUL part
-    wire [63:0] mul_result;
+    // MUL_DIV part
+    wire [63:0] mix_result;
+    wire inst_mix,inst_mixu;
+    wire mix_ready_i;
+    reg stallreq_for_mix;
 
-    wire mul_ready_i;
-    reg stallreq_for_mul;
-
-    reg [31:0] mul_opdata1_o;
-    reg [31:0] mul_opdata2_o;
-    reg mul_start_o;
-    reg signed_mul_o;
-
-
-    // mul u_mul(
-    // 	.clk        (clk            ),
-    //     .resetn     (~rst           ),
-    //     .mul_signed (inst_mult      ),
-    //     .ina        (rf_rdata1      ), // 乘法源操作数1
-    //     .inb        (rf_rdata2      ), // 乘法源操作数2
-    //     .result     (mul_result     ) // 乘法结果 64bit
-    // );
-
-    mymul u_mymul(
-        .rst          (rst          ),
-        .clk          (clk          ),
-        .signed_mul_i (signed_mul_o ),
-        .opdata1_i    (mul_opdata1_o       ),
-        .opdata2_i    (mul_opdata2_o       ),
-        .start_i      (mul_start_o     ),
-        .annul_i      (1'b0      ),
-        .result_o     (mul_result     ), // 乘法结果 64bit
-        .ready_o      (mul_ready_i      )
-    );
-
-    always @ (*) begin
-        if (rst) begin
-            stallreq_for_mul = `NoStop;
-            mul_opdata1_o = `ZeroWord;
-            mul_opdata2_o = `ZeroWord;
-            mul_start_o = `MulStop;
-            signed_mul_o = 1'b0;
-        end
-        else begin
-            stallreq_for_mul = `NoStop;
-            mul_opdata1_o = `ZeroWord;
-            mul_opdata2_o = `ZeroWord;
-            mul_start_o = `MulStop;
-            signed_mul_o = 1'b0;
-            case ({inst_mult,inst_multu})
-                2'b10:begin
-                    if (mul_ready_i == `MulResultNotReady) begin
-                        mul_opdata1_o = rf_rdata1;
-                        mul_opdata2_o = rf_rdata2;
-                        mul_start_o = `MulStart;
-                        signed_mul_o = 1'b1;
-                        stallreq_for_mul = `Stop;
-                    end
-                    else if (mul_ready_i == `MulResultReady) begin
-                        mul_opdata1_o = rf_rdata1;
-                        mul_opdata2_o = rf_rdata2;
-                        mul_start_o = `MulStop;
-                        signed_mul_o = 1'b1;
-                        stallreq_for_mul = `NoStop;
-                    end
-                    else begin
-                        mul_opdata1_o = `ZeroWord;
-                        mul_opdata2_o = `ZeroWord;
-                        mul_start_o = `MulStop;
-                        signed_mul_o = 1'b0;
-                        stallreq_for_mul = `NoStop;
-                    end
-                end
-                2'b01:begin
-                    if (mul_ready_i == `MulResultNotReady) begin
-                        mul_opdata1_o = rf_rdata1;
-                        mul_opdata2_o = rf_rdata2;
-                        mul_start_o = `MulStart;
-                        signed_mul_o = 1'b0;
-                        stallreq_for_mul = `Stop;
-                    end
-                    else if (mul_ready_i == `MulResultReady) begin
-                        mul_opdata1_o = rf_rdata1;
-                        mul_opdata2_o = rf_rdata2;
-                        mul_start_o = `MulStop;
-                        signed_mul_o = 1'b0;
-                        stallreq_for_mul = `NoStop;
-                    end
-                    else begin
-                        mul_opdata1_o = `ZeroWord;
-                        mul_opdata2_o = `ZeroWord;
-                        mul_start_o = `MulStop;
-                        signed_mul_o = 1'b0;
-                        stallreq_for_mul = `NoStop;
-                    end
-                end
-                default:begin
-                end
-            endcase
-        end
-    end
-
-    // DIV part
-    wire [63:0] div_result;
-    wire inst_div, inst_divu;
-
-    assign inst_div = hilo_inst == 4'b0111 ? 1 : 0;
-    assign inst_divu = hilo_inst == 4'b1000 ? 1 : 0;
-
-    wire div_ready_i;
-    reg stallreq_for_div;
-
-    assign stallreq_for_ex = stallreq_for_div | stallreq_for_mul ;
+    assign stallreq_for_ex = stallreq_for_mix ;
     
-
-    reg [31:0] div_opdata1_o;
-    reg [31:0] div_opdata2_o;
-    reg div_start_o;
-    reg signed_div_o;
-
-    div u_div(
+    reg [31:0] mix_opdata1_o;
+    reg [31:0] mix_opdata2_o;
+    reg mix_start_o;
+    reg signed_mix_o;
+    
+    assign inst_mix = inst_mult | inst_div;
+    assign inst_mixu = inst_multu | inst_divu;
+    mix u_mix(
     	.rst          (rst          ),
         .clk          (clk          ),
-        .signed_div_i (signed_div_o ),
-        .opdata1_i    (div_opdata1_o    ),
-        .opdata2_i    (div_opdata2_o    ),
-        .start_i      (div_start_o      ),
+        .mul_div      (inst_div | inst_divu ),
+        .signed_mix_i (signed_mix_o ),
+        .opdata1_i    (mix_opdata1_o    ),
+        .opdata2_i    (mix_opdata2_o    ),
+        .start_i      (mix_start_o      ),
         .annul_i      (1'b0      ),
-        .result_o     (div_result     ), // 除法结果 64bit
-        .ready_o      (div_ready_i      )
+        .result_o     (mix_result     ), // 除法结果 64bit
+        .ready_o      (mix_ready_i      )
     );
 
     always @ (*) begin
         if (rst) begin
-            stallreq_for_div = `NoStop;
-            div_opdata1_o = `ZeroWord;
-            div_opdata2_o = `ZeroWord;
-            div_start_o = `DivStop;
-            signed_div_o = 1'b0;
+            stallreq_for_mix = `NoStop;
+            mix_opdata1_o = `ZeroWord;
+            mix_opdata2_o = `ZeroWord;
+            mix_start_o = `DivStop;
+            signed_mix_o = 1'b0;
         end
         else begin
-            stallreq_for_div = `NoStop;
-            div_opdata1_o = `ZeroWord;
-            div_opdata2_o = `ZeroWord;
-            div_start_o = `DivStop;
-            signed_div_o = 1'b0;
-            case ({inst_div,inst_divu})
+            stallreq_for_mix = `NoStop;
+            mix_opdata1_o = `ZeroWord;
+            mix_opdata2_o = `ZeroWord;
+            mix_start_o = `DivStop;
+            signed_mix_o = 1'b0;
+            case ({inst_mix,inst_mixu})
                 2'b10:begin
-                    if (div_ready_i == `DivResultNotReady) begin
-                        div_opdata1_o = rf_rdata1;
-                        div_opdata2_o = rf_rdata2;
-                        div_start_o = `DivStart;
-                        signed_div_o = 1'b1;
-                        stallreq_for_div = `Stop;
+                    if (mix_ready_i == `DivResultNotReady) begin
+                        mix_opdata1_o = rf_rdata1;
+                        mix_opdata2_o = rf_rdata2;
+                        mix_start_o = `DivStart;
+                        signed_mix_o = 1'b1;
+                        stallreq_for_mix = `Stop;
                     end
-                    else if (div_ready_i == `DivResultReady) begin
-                        div_opdata1_o = rf_rdata1;
-                        div_opdata2_o = rf_rdata2;
-                        div_start_o = `DivStop;
-                        signed_div_o = 1'b1;
-                        stallreq_for_div = `NoStop;
+                    else if (mix_ready_i == `DivResultReady) begin
+                        mix_opdata1_o = rf_rdata1;
+                        mix_opdata2_o = rf_rdata2;
+                        mix_start_o = `DivStop;
+                        signed_mix_o = 1'b1;
+                        stallreq_for_mix = `NoStop;
                     end
                     else begin
-                        div_opdata1_o = `ZeroWord;
-                        div_opdata2_o = `ZeroWord;
-                        div_start_o = `DivStop;
-                        signed_div_o = 1'b0;
-                        stallreq_for_div = `NoStop;
+                        mix_opdata1_o = `ZeroWord;
+                        mix_opdata2_o = `ZeroWord;
+                        mix_start_o = `DivStop;
+                        signed_mix_o = 1'b0;
+                        stallreq_for_mix = `NoStop;
                     end
                 end
                 2'b01:begin
-                    if (div_ready_i == `DivResultNotReady) begin
-                        div_opdata1_o = rf_rdata1;
-                        div_opdata2_o = rf_rdata2;
-                        div_start_o = `DivStart;
-                        signed_div_o = 1'b0;
-                        stallreq_for_div = `Stop;
+                    if (mix_ready_i == `DivResultNotReady) begin
+                        mix_opdata1_o = rf_rdata1;
+                        mix_opdata2_o = rf_rdata2;
+                        mix_start_o = `DivStart;
+                        signed_mix_o = 1'b0;
+                        stallreq_for_mix = `Stop;
                     end
-                    else if (div_ready_i == `DivResultReady) begin
-                        div_opdata1_o = rf_rdata1;
-                        div_opdata2_o = rf_rdata2;
-                        div_start_o = `DivStop;
-                        signed_div_o = 1'b0;
-                        stallreq_for_div = `NoStop;
+                    else if (mix_ready_i == `DivResultReady) begin
+                        mix_opdata1_o = rf_rdata1;
+                        mix_opdata2_o = rf_rdata2;
+                        mix_start_o = `DivStop;
+                        signed_mix_o = 1'b0;
+                        stallreq_for_mix = `NoStop;
                     end
                     else begin
-                        div_opdata1_o = `ZeroWord;
-                        div_opdata2_o = `ZeroWord;
-                        div_start_o = `DivStop;
-                        signed_div_o = 1'b0;
-                        stallreq_for_div = `NoStop;
+                        mix_opdata1_o = `ZeroWord;
+                        mix_opdata2_o = `ZeroWord;
+                        mix_start_o = `DivStop;
+                        signed_mix_o = 1'b0;
+                        stallreq_for_mix = `NoStop;
                     end
                 end
                 default:begin
@@ -365,11 +265,9 @@ module EX(
     end
 
     assign hi_rf_wdata = inst_mthi ? rf_rdata1 :
-                         inst_mult | inst_multu ? mul_result[63:32] :
-                         inst_div | inst_divu ? div_result[63:32] : 32'b0;
+                         inst_mix | inst_mixu ? mix_result[63:32] : 32'b0;
     assign lo_rf_wdata = inst_mtlo ? rf_rdata1 : 
-                         inst_mult | inst_multu ? mul_result[31:0] : 
-                         inst_div | inst_divu ? div_result[31:0] : 32'b0;
+                         inst_mix | inst_mixu ? mix_result[31:0] : 32'b0;
 
     assign hilo_ex_to_mem_bus ={
         hi_rf_wdata,            // 65:34

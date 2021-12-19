@@ -32,3 +32,13 @@
 `define MulResultNotReady 1'b0
 `define MulStart 1'b1
 `define MulStop 1'b0
+
+//混合乘除mul_div
+`define MixFree 2'b00
+`define MixByZero 2'b01
+`define MixOn 2'b10
+`define MixEnd 2'b11
+`define MixResultReady 1'b1
+`define MixResultNotReady 1'b0
+`define MixStart 1'b1
+`define MixStop 1'b0
