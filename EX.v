@@ -202,58 +202,58 @@ module EX(
             stallreq_for_mix = `NoStop;
             mix_opdata1_o = `ZeroWord;
             mix_opdata2_o = `ZeroWord;
-            mix_start_o = `DivStop;
+            mix_start_o = `MixStop;
             signed_mix_o = 1'b0;
         end
         else begin
             stallreq_for_mix = `NoStop;
             mix_opdata1_o = `ZeroWord;
             mix_opdata2_o = `ZeroWord;
-            mix_start_o = `DivStop;
+            mix_start_o = `MixStop;
             signed_mix_o = 1'b0;
             case ({inst_mix,inst_mixu})
                 2'b10:begin
-                    if (mix_ready_i == `DivResultNotReady) begin
+                    if (mix_ready_i == `MixResultNotReady) begin
                         mix_opdata1_o = rf_rdata1;
                         mix_opdata2_o = rf_rdata2;
-                        mix_start_o = `DivStart;
+                        mix_start_o = `MixStart;
                         signed_mix_o = 1'b1;
                         stallreq_for_mix = `Stop;
                     end
-                    else if (mix_ready_i == `DivResultReady) begin
+                    else if (mix_ready_i == `MixResultReady) begin
                         mix_opdata1_o = rf_rdata1;
                         mix_opdata2_o = rf_rdata2;
-                        mix_start_o = `DivStop;
+                        mix_start_o = `MixStop;
                         signed_mix_o = 1'b1;
                         stallreq_for_mix = `NoStop;
                     end
                     else begin
                         mix_opdata1_o = `ZeroWord;
                         mix_opdata2_o = `ZeroWord;
-                        mix_start_o = `DivStop;
+                        mix_start_o = `MixStop;
                         signed_mix_o = 1'b0;
                         stallreq_for_mix = `NoStop;
                     end
                 end
                 2'b01:begin
-                    if (mix_ready_i == `DivResultNotReady) begin
+                    if (mix_ready_i == `MixResultNotReady) begin
                         mix_opdata1_o = rf_rdata1;
                         mix_opdata2_o = rf_rdata2;
-                        mix_start_o = `DivStart;
+                        mix_start_o = `MixStart;
                         signed_mix_o = 1'b0;
                         stallreq_for_mix = `Stop;
                     end
-                    else if (mix_ready_i == `DivResultReady) begin
+                    else if (mix_ready_i == `MixResultReady) begin
                         mix_opdata1_o = rf_rdata1;
                         mix_opdata2_o = rf_rdata2;
-                        mix_start_o = `DivStop;
+                        mix_start_o = `MixStop;
                         signed_mix_o = 1'b0;
                         stallreq_for_mix = `NoStop;
                     end
                     else begin
                         mix_opdata1_o = `ZeroWord;
                         mix_opdata2_o = `ZeroWord;
-                        mix_start_o = `DivStop;
+                        mix_start_o = `MixStop;
                         signed_mix_o = 1'b0;
                         stallreq_for_mix = `NoStop;
                     end
