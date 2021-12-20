@@ -16,7 +16,7 @@ module CTRL(
             stall = 6'b000111;
         end
         else if(stallreq_for_ex==1) begin
-            stall = 6'b111111;
+            stall = 6'b011111;
         end
         else begin
             stall = `StallBus'b0;
